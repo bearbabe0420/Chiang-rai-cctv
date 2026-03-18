@@ -108,7 +108,12 @@ public class HLSStreamService {
 
                 try {
                     // Phase 1 — Init grabber (with retries, dimension detection)
-                    grabber = grabberConfig.startGrabberWithRetry(currentRtspUrl.get(), streamName, context);
+                    // SD Configuration (Standard Definition)
+                    // grabber = grabberConfig.startGrabberWithRetry(currentRtspUrl.get(), streamName, context);
+                    
+                    // HD Configuration (High Definition - 720p/1080p)
+                    grabber = grabberConfig.startGrabberWithRetryHD(currentRtspUrl.get(), streamName, context);
+                    
                     int width = grabber.getImageWidth();
                     int height = grabber.getImageHeight();
 
@@ -116,12 +121,15 @@ public class HLSStreamService {
                     //orchestrator.init(width, height);
 
                     // Phase 2 — Init recorder (with retries)
-                    recorder = recorderConfig.startRecorderWithRetry(hlsOutput, outputDir, width, height, streamName,
-                            context);
+                    // SD Configuration (Standard Definition)
+                    // recorder = recorderConfig.startRecorderWithRetry(hlsOutput, outputDir, width, height, streamName, context);
+                    
+                    // HD Configuration (High Definition - 720p/1080p)
+                    recorder = recorderConfig.startRecorderWithRetryHD(hlsOutput, outputDir, width, height, streamName, context);
 
                     logger.info("Stream {} - Flushing stale grabber buffer...", streamName);
                     int flushed = 0;
-                    for (int i = 0; i < 50; i++) {
+                    for (int i = 0; i < 5; i++) {
                         if (Thread.currentThread().isInterrupted() || context.shouldStop)
                             break;
                         Frame stale = grabber.grabImage();
@@ -143,7 +151,7 @@ public class HLSStreamService {
 
                             if (frame == null) {
                                 nullFrameCount++;
-                                if (nullFrameCount == 50 || nullFrameCount == 100) {
+                                if (nullFrameCount == 100) {
                                     logger.warn("Stream {} - {} consecutive null frames, attempting reconnect...",
                                             streamName, nullFrameCount);
 
@@ -153,13 +161,21 @@ public class HLSStreamService {
                                                 streamName, reconnectAttempts, MAX_RECONNECT_ATTEMPTS);
                                         try {
                                             grabberConfig.safeClose(grabber);
+                                            //recorderConfig.safeClose(context.recorder);  
+                                            //context.recorder = null;
                                             // Fetch fresh RTSP URL from Firebase in case it was updated
                                             String freshUrl = fetchRtspUrlFromFirebase(streamName, currentRtspUrl.get());
                                             currentRtspUrl.set(freshUrl);
                                             // Clean stale HLS segments before reconnecting
                                             resourceManager.cleanStreamFiles(streamName);
                                             Thread.sleep(RECONNECT_DELAY_MS);
-                                            grabber = grabberConfig.startGrabberWithRetry(currentRtspUrl.get(), streamName, context);
+                                            // SD Configuration
+                                            // grabber = grabberConfig.startGrabberWithRetry(currentRtspUrl.get(), streamName, context);
+                                            // HD Configuration
+                                            grabber = grabberConfig.startGrabberWithRetryHD(currentRtspUrl.get(), streamName, context);
+                                            //int newWidth = grabber.getImageWidth();
+                                            //int newHeight = grabber.getImageHeight();
+                                            //recorder = recorderConfig.startRecorderWithRetryHD(hlsOutput, outputDir, newWidth, newHeight, streamName, context);
                                             nullFrameCount = 0;
                                             logger.info("Stream {} - Reconnected successfully", streamName);
                                         } catch (Exception reconnectEx) {
