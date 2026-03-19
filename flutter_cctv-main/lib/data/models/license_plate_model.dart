@@ -17,7 +17,7 @@ class LicensePlateModel {
   factory LicensePlateModel.fromJson(Map<String, dynamic> json) {
     return LicensePlateModel(
       timestamp: json['timestamp'] as String?,
-      cameraName: json['cameraName'] as String?,
+      cameraName: (json['camera'] as Map<String, dynamic>?)?['name'] as String?,
       cameraId: json['cameraId'] as String?,
       imageUrl: json['imageUrl'] as String?,
       licensePlate: json['licensePlate'] != null
