@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 // DO NOT REMOVE OR MODIFY THE CODE ABOVE!
 
 import '/utils/app_text_styles.dart';
+import '/core/i18n/i18n.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_tile_provider.dart';
 import 'package:latlong2/latlong.dart' as latlong;
@@ -444,7 +445,7 @@ class _ClusterPickerSheet extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'showing cameras in this area',
+                        'กำลังแสดงกล้องในพื้นที่นี้',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: AppTextStyles.commandTitle,
@@ -452,7 +453,7 @@ class _ClusterPickerSheet extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        '${cameras.length} camera in this cluster',
+                        '${cameras.length} กล้องในคลัสเตอร์นี้',
                         style: TextStyle(
                           color: Colors.white.withOpacity(0.5),
                           fontSize: AppTextStyles.commandSmall,
@@ -487,7 +488,7 @@ class _ClusterPickerSheet extends StatelessWidget {
                   height: 1, color: Color(0xFFEEEEEE), indent: 60),
               itemBuilder: (_, i) {
                 final doc      = cameras[i];
-                final name     = doc['name']?.toString() ?? 'Camera ${i + 1}';
+                final name     = doc['name']?.toString() ?? 'กล้อง ${i + 1}';
                 final address  = doc['address']?.toString() ?? '';
                 final isOnline =
                     doc['status']?.toString().toLowerCase() == 'online';
@@ -555,7 +556,7 @@ class _ClusterPickerSheet extends StatelessWidget {
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
-                            isOnline ? 'Online' : 'Offline',
+                            isOnline ? context.tr('marker_popup.online') : context.tr('marker_popup.offline'),
                             style: TextStyle(
                               color: isOnline
                                   ? Colors.white

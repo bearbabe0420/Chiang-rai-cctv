@@ -1,4 +1,5 @@
 import '/data/services/index.dart';
+import '/core/i18n/i18n.dart';
 import '/utils/flutter_flow/theme.dart';
 import '/utils/flutter_flow/util.dart';
 import '/utils/flutter_flow/widgets.dart';
@@ -66,7 +67,10 @@ class _AddnewcameraWidgetState extends State<AddnewcameraWidget> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Added camera "${_model.textController1?.text}" successfully',
+            context.tr(
+              'camera_form.add_success',
+              params: {'name': '${_model.textController1?.text ?? ''}'},
+            ),
             style: const TextStyle(color: Colors.white),
           ),
           backgroundColor: const Color(0xFF16A34A),
@@ -81,7 +85,10 @@ class _AddnewcameraWidgetState extends State<AddnewcameraWidget> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Failed to create camera (${response.statusCode})',
+              context.tr(
+                'camera_form.create_failed',
+                params: {'statusCode': '${response.statusCode}'},
+              ),
               style: const TextStyle(color: Colors.white),
             ),
             backgroundColor: FlutterFlowTheme.of(context).error,
@@ -98,7 +105,7 @@ class _AddnewcameraWidgetState extends State<AddnewcameraWidget> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Error occurred: $e',
+            context.tr('camera_form.error_occurred', params: {'error': '$e'}),
             style: const TextStyle(color: Colors.white),
           ),
           backgroundColor: FlutterFlowTheme.of(context).error,
@@ -259,51 +266,51 @@ Widget build(BuildContext context) {
                     children: [
 
                       _field(
-                        label: 'Camera Name',
-                        hint: 'e.g. C8 T.T.San Tai, M.10',
+                        label: context.tr('camera_form.name_label'),
+                        hint: context.tr('camera_form.name_hint'),
                         controller: _model.textController1!,
                         focusNode: _model.textFieldFocusNode1!,
                         validator: (v) =>
                             (v == null || v.trim().isEmpty)
-                                ? 'Required'
+                                ? context.tr('camera_form.required')
                                 : null,
                       ),
                       const SizedBox(height: 18),
 
                       _field(
-                        label: 'LatLong',
+                        label: context.tr('camera_form.latlong_label'),
                         hint: '20.412001,99.994481',
                         controller: _model.textController2!,
                         focusNode: _model.textFieldFocusNode2!,
                         validator: (v) {
                           if (v == null || v.trim().isEmpty)
-                            return 'Required';
+                            return context.tr('camera_form.required');
                           final p = v.trim().split(',');
                           if (p.length != 2)
-                            return 'Format: lat,long';
+                            return context.tr('camera_form.latlong_format');
                           if (double.tryParse(p[0].trim()) == null ||
                               double.tryParse(p[1].trim()) == null)
-                            return 'Must be numbers';
+                            return context.tr('camera_form.must_be_numbers');
                           return null;
                         },
                       ),
                       const SizedBox(height: 18),
 
                       _field(
-                        label: 'Address',
+                        label: context.tr('camera_form.address_label'),
                         hint: 'ที่อยู่',
                         controller: _model.textController3!,
                         focusNode: _model.textFieldFocusNode3!,
                         maxLines: 2,
                         validator: (v) =>
                             (v == null || v.trim().isEmpty)
-                                ? 'Required'
+                                ? context.tr('camera_form.required')
                                 : null,
                       ),
                       const SizedBox(height: 18),
 
                       _field(
-                        label: 'RTSP URL',
+                        label: context.tr('camera_form.rtsp_label'),
                         hint: 'rtsp://...',
                         controller: _model.textController4!,
                         focusNode: _model.textFieldFocusNode4!,
@@ -314,7 +321,7 @@ Widget build(BuildContext context) {
                             if (!v.trim().startsWith('rtsp://') &&
                                 !v.trim().startsWith('http://') &&
                                 !v.trim().startsWith('https://')) {
-                              return 'Must start with rtsp://, http://, or https://';
+                              return context.tr('camera_form.rtsp_prefix_invalid');
                             }
                           }
                           return null;
@@ -341,7 +348,7 @@ Widget build(BuildContext context) {
                                     color: Color(0xFFD1D5DB)),
                               ),
                               child: const Text(
-                                'Cancel',
+                                'ยกเลิก',
                                 style: TextStyle(
                                   color: Color(0xFF374151),
                                   fontWeight: FontWeight.w600,
@@ -388,7 +395,7 @@ Widget build(BuildContext context) {
                                             color: Colors.white),
                                         SizedBox(width: 8),
                                         Text(
-                                          'Save',
+                                          'บันทึก',
                                           style: TextStyle(
                                             color: Colors.white,
                                             fontWeight: FontWeight.w700,

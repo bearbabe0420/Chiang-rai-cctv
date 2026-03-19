@@ -1,6 +1,7 @@
 import '/utils/flutter_flow/theme.dart';
 import '/utils/flutter_flow/util.dart';
 import '/utils/flutter_flow/widgets.dart';
+import '/core/i18n/i18n.dart';
 import 'dart:ui';
 import '/index.dart';
 import 'package:flutter/material.dart';
@@ -26,27 +27,27 @@ class _NavBarMainWidgetState extends State<NavBarMainWidget> {
 
   static const _navItems = [
     _NavItemData(
-      label: 'List Camera',
+      labelKey: 'nav.list_camera',
       icon: Icons.videocam_outlined,
       routeName: 'ListCameraPage',
     ),
     _NavItemData(
-      label: 'Search Plate',
+      labelKey: 'nav.search_plate',
       icon: Icons.search_outlined,
       routeName: 'ListPlatePage',
     ),
     _NavItemData(
-      label: 'Collection',
+      labelKey: 'nav.collection',
       icon: Icons.folder_outlined,
       routeName: 'Collection',
     ),
     _NavItemData(
-      label: 'Command View',
+      labelKey: 'nav.command_view',
       icon: Icons.dashboard_outlined,
       routeName: 'CommandView',
     ),
     _NavItemData(
-      label: 'Map View',
+      labelKey: 'nav.map_view',
       icon: Icons.map_outlined,
       routeName: 'MapView',
     ),
@@ -121,7 +122,7 @@ class _NavBarMainWidgetState extends State<NavBarMainWidget> {
 
         // ── Brand name ───────────────────────────────────────────────────────
         Text(
-          'Central Eye',
+          context.tr('nav.brand'),
           style: GoogleFonts.plusJakartaSans(
             color: const Color(0xFF111827),
             fontSize: AppTextStyles.navBrand,
@@ -142,7 +143,7 @@ class _NavBarMainWidgetState extends State<NavBarMainWidget> {
             mainAxisSize: MainAxisSize.min,
             children: _navItems.map((item) {
               final isActive = currentRoute == item.routeName;
-              final isHovered = _hoveredItem == item.label;
+              final isHovered = _hoveredItem == item.labelKey;
               return Padding(
                 padding: const EdgeInsets.only(right: 2),
                 child: _NavItemWidget(
@@ -151,7 +152,7 @@ class _NavBarMainWidgetState extends State<NavBarMainWidget> {
                   isHovered: isHovered,
                   primaryColor: _primaryColor,
                   onHoverChanged: (v) => setState(
-                      () => _hoveredItem = v ? item.label : null),
+                      () => _hoveredItem = v ? item.labelKey : null),
                   onTap: () => _navigate(context, item.routeName),
                 ),
               );
@@ -170,11 +171,11 @@ class _NavBarMainWidgetState extends State<NavBarMainWidget> {
 // ─── Data class ──────────────────────────────────────────────────────────────
 
 class _NavItemData {
-  final String label;
+  final String labelKey;
   final IconData icon;
   final String routeName;
   const _NavItemData(
-      {required this.label, required this.icon, required this.routeName});
+      {required this.labelKey, required this.icon, required this.routeName});
 }
 
 // ─── Nav item widget (stateless with hover) ───────────────────────────────────
@@ -234,7 +235,7 @@ class _NavItemWidget extends StatelessWidget {
               ),
               const SizedBox(width: 5),
               Text(
-                data.label,
+                context.tr(data.labelKey),
                 style: GoogleFonts.plusJakartaSans(
                   color: isActive
                       ? primaryColor
@@ -306,7 +307,7 @@ class _ProfileButtonState extends State<_ProfileButton> {
                   ),
                 ),
                 Text(
-                  'Administrator',
+                  context.tr('nav.administrator'),
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 11,
                     color: const Color(0xFF6B7280),
@@ -325,7 +326,7 @@ class _ProfileButtonState extends State<_ProfileButton> {
                     size: 15, color: Color(0xFFEF4444)),
                 const SizedBox(width: 8),
                 Text(
-                  'Logout',
+                  context.tr('nav.logout'),
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 13,
                     fontWeight: FontWeight.w500,

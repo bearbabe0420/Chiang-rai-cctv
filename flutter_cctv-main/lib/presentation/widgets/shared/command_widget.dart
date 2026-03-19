@@ -11,6 +11,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http; // <-- ใช้ยิง POST
 import '/data/services/category_service.dart';
 import '/data/services/camera_service.dart';
+import '/core/i18n/i18n.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // ====== ตั้งค่า BASE URL ของ backend (แก้ให้ตรงระบบคุณ) ======
@@ -40,7 +41,7 @@ class CameraInfo {
       id: docId ?? data['id']?.toString() ?? '',
       name: (data['name'] as String?)?.trim().isNotEmpty == true
           ? (data['name'] as String)
-          : 'Camera',
+          : 'กล้อง',
       rtspUrl: (data['rtspUrl'] as String? ?? 
                 data['url'] as String? ?? 
                 data['URL'] as String? ?? 
@@ -109,7 +110,7 @@ class _StreamLoadingTileState extends State<_StreamLoadingTile> {
           ),
           const SizedBox(height: 6),
           Text(
-            _isSlow ? 'Taking longer than usual…' : 'Starting stream…',
+            _isSlow ? 'กำลังใช้เวลานานกว่าปกติ…' : 'กำลังเริ่มสตรีม…',
             style: TextStyle(
               color: Colors.white.withOpacity(0.55),
               fontSize: 9,
@@ -194,7 +195,7 @@ class _AccidentOverlayState extends State<_AccidentOverlay>
                           color: Colors.white, size: 10),
                       const SizedBox(width: 3),
                       Text(
-                        'ACCIDENT  ${_formatTs(widget.timestamp)}',
+                        'อุบัติเหตุ  ${_formatTs(widget.timestamp)}',
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 8,
@@ -263,7 +264,7 @@ class _VideoTileState extends State<_VideoTile> {
         children: [
           Positioned.fill(
             child: widget.isEditMode
-                ? _editModePlaceholder(widget.camera?.name ?? 'CAM ${widget.index + 1}')
+                ? _editModePlaceholder(widget.camera?.name ?? 'กล้อง ${widget.index + 1}')
                 : hasCam
                     // F2: hlsFuture is null when this camera is shown full-screen
                     // in the focus overlay. Show a dark placeholder instead of a
@@ -289,7 +290,7 @@ class _VideoTileState extends State<_VideoTile> {
                             if (!_gracePeriodDone) {
                               return _StreamLoadingTile(cameraName: widget.camera!.name);
                             }
-                            return _errorTile(result?.error ?? 'Stream unavailable');
+                            return _errorTile(result?.error ?? context.tr('command.stream_unavailable'));
                           }
                           return HlsPlayer(
                             key: ValueKey(
@@ -313,7 +314,7 @@ class _VideoTileState extends State<_VideoTile> {
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
-                  hasCam ? widget.camera!.name : 'CAM ${widget.index + 1}',
+                  hasCam ? widget.camera!.name : 'กล้อง ${widget.index + 1}',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 10,
@@ -355,7 +356,7 @@ class _VideoTileState extends State<_VideoTile> {
           Icon(icon, color: accent, size: 26),
           const SizedBox(height: 6),
           Text(
-            'Stream Unavailable',
+            context.tr('command.stream_unavailable'),
             style: TextStyle(
               color: accent,
               fontSize: 10,
@@ -398,7 +399,7 @@ class _VideoTileState extends State<_VideoTile> {
             const Icon(Icons.video_camera_back_outlined, color: Colors.white24, size: 32),
             const SizedBox(height: 8),
             Text(
-              'EMPTY SLOT ${index + 1}',
+              'ช่องว่าง ${index + 1}',
               style: const TextStyle(color: Colors.white54, fontSize: 10),
               textAlign: TextAlign.center,
             ),
@@ -438,7 +439,7 @@ class _VideoTileState extends State<_VideoTile> {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                'Stream paused in edit mode',
+                'หยุดสตรีมชั่วคราวขณะแก้ไข',
                 style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 9),
                 textAlign: TextAlign.center,
               ),
@@ -692,13 +693,13 @@ class _CommandWidgetState extends State<CommandWidget> {
     try {
       final category = _categories.firstWhere(
         (cat) => cat['id']?.toString() == categoryId,
-        orElse: () => {'name': 'Unknown'},
+        orElse: () => {'name': 'ไม่ทราบ'},
       );
-      final name = category['name']?.toString() ?? 'Unknown';
+      final name = category['name']?.toString() ?? 'ไม่ทราบ';
       if (!truncate) return name;
       return name.length > 9 ? '${name.substring(0, 9)}...' : name;
     } catch (e) {
-      return 'Unknown';
+      return 'ไม่ทราบ';
     }
   }
 
@@ -776,7 +777,7 @@ class _CommandWidgetState extends State<CommandWidget> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Accident Detected — ${camera.name}',
+                      'ตรวจพบอุบัติเหตุ - ${camera.name}',
                       style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -826,7 +827,7 @@ class _CommandWidgetState extends State<CommandWidget> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: Text(
-                  'Detected at: $timestamp',
+                  'ตรวจพบเมื่อ: $timestamp',
                   style: const TextStyle(
                       color: Colors.white54, fontSize: 12),
                   textAlign: TextAlign.center,
@@ -843,7 +844,7 @@ class _CommandWidgetState extends State<CommandWidget> {
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8)),
                 ),
-                child: const Text('Dismiss'),
+                child: const Text('ปิด'),
               ),
             ),
           ],
@@ -886,7 +887,7 @@ class _CommandWidgetState extends State<CommandWidget> {
 
         if (hlsUrl == null || hlsUrl.isEmpty) {
           print('⚠️ No HLS URL in response for ${cam.name}');
-          return _HlsResult(error: 'Server returned no HLS URL');
+          return _HlsResult(error: 'เซิร์ฟเวอร์ไม่ส่ง URL HLS กลับมา');
         }
 
         String finalUrl = hlsUrl;
@@ -903,11 +904,11 @@ class _CommandWidgetState extends State<CommandWidget> {
           final errorMsg = errorObj['error']?.toString() ?? resp.body;
           print('❌ ${cam.name}: $errorMsg');
           if (errorMsg.contains('No RTSP URL configured')) {
-            return _HlsResult(error: 'No RTSP URL configured for this camera');
+            return _HlsResult(error: 'กล้องนี้ยังไม่ได้ตั้งค่า RTSP URL');
           }
-          return _HlsResult(error: 'Bad request: $errorMsg');
+          return _HlsResult(error: 'คำขอไม่ถูกต้อง: $errorMsg');
         } catch (_) {
-          return _HlsResult(error: 'Bad request (400): ${resp.body.length > 80 ? resp.body.substring(0, 80) : resp.body}');
+          return _HlsResult(error: 'คำขอไม่ถูกต้อง (400): ${resp.body.length > 80 ? resp.body.substring(0, 80) : resp.body}');
         }
       } else {
         print('❌ HTTP ${resp.statusCode} for ${cam.name}: ${resp.body}');
@@ -922,10 +923,10 @@ class _CommandWidgetState extends State<CommandWidget> {
       _hlsCache.remove(removeKey);
       if (e.toString().contains('TimeoutException')) {
         print('⏱️ Stream timeout for ${cam.name}');
-        return _HlsResult(error: 'Connection timed out — server unreachable');
+        return _HlsResult(error: 'การเชื่อมต่อหมดเวลา - ไม่สามารถเข้าถึงเซิร์ฟเวอร์');
       }
       print('❌ Exception for ${cam.name}: $e');
-      return _HlsResult(error: 'Unexpected error: $e');
+      return _HlsResult(error: 'เกิดข้อผิดพลาดที่ไม่คาดคิด: $e');
     }
   }
   
@@ -1051,7 +1052,7 @@ class _CommandWidgetState extends State<CommandWidget> {
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: const Text(
-                                    'SELECTED - Click another to swap',
+                                    'เลือกแล้ว - แตะอีกช่องเพื่อสลับ',
                                     style: TextStyle(
                                       color: Colors.white,
                                       fontSize: 10,
@@ -1209,7 +1210,7 @@ class _CommandWidgetState extends State<CommandWidget> {
                               _fetchCategories();
                             },
                             icon: const Icon(Icons.refresh),
-                            label: const Text('Retry'),
+                            label: const Text('ลองใหม่'),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.blue,
                               foregroundColor: Colors.white,
@@ -1238,7 +1239,7 @@ class _CommandWidgetState extends State<CommandWidget> {
                             ),
                             const SizedBox(height: 16),
                             Text(
-                              'There is no camera in this category',
+                              'ไม่มีรายการกล้องในหมวดหมู่นี้',
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 16,
@@ -1247,7 +1248,7 @@ class _CommandWidgetState extends State<CommandWidget> {
                             ),
                             const SizedBox(height: 8),
                             const Text(
-                              'You can add cameras manually from the Collection page',
+                              'คุณสามารถเพิ่มกล้องได้จากหน้าคอลเลกชัน',
                               style: TextStyle(
                                 color: Colors.white38,
                                 fontSize: 13,
@@ -1270,7 +1271,7 @@ class _CommandWidgetState extends State<CommandWidget> {
                             ),
                             const SizedBox(height: 16),
                             const Text(
-                              'No cameras available',
+                              'ไม่มีกล้องที่ใช้งานได้',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 16,
@@ -1278,7 +1279,7 @@ class _CommandWidgetState extends State<CommandWidget> {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'Check your API connection',
+                              'โปรดตรวจสอบการเชื่อมต่อ API',
                               style: TextStyle(
                                 color: Colors.white.withOpacity(0.6),
                                 fontSize: 14,
@@ -1292,7 +1293,7 @@ class _CommandWidgetState extends State<CommandWidget> {
                                 _fetchCategories();
                               },
                               icon: const Icon(Icons.refresh),
-                              label: const Text('Refresh'),
+                              label: const Text('รีเฟรช'),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.blue,
                                 foregroundColor: Colors.white,
@@ -1430,7 +1431,7 @@ class _CommandWidgetState extends State<CommandWidget> {
                             });
                           },
                           icon: _isEditMode ? Icons.check : Icons.edit,
-                          label: _isEditMode ? 'Done' : 'Edit',
+                          label: _isEditMode ? 'เสร็จสิ้น' : 'แก้ไข',
                           isActive: _isEditMode,
                         ),
                       ],
@@ -1501,7 +1502,7 @@ class _CommandWidgetState extends State<CommandWidget> {
                                     children: [
                                       Text(
                                         _selectedCategoryId == null
-                                            ? 'No Filter'
+                                            ? 'ไม่กรอง'
                                             : _getCategoryName(_selectedCategoryId!),
                                         style: const TextStyle(
                                           color: Colors.white,
@@ -1517,8 +1518,8 @@ class _CommandWidgetState extends State<CommandWidget> {
                                           final total = _cameras.length;
                                           final showing = total > maxSlots ? maxSlots : total;
                                           return total > maxSlots 
-                                            ? '$showing/$total cams'
-                                            : '$showing cam${showing == 1 ? '' : 's'}';
+                                            ? '$showing/$total กล้อง'
+                                            : '$showing กล้อง';
                                         }(),
                                         style: TextStyle(
                                           color: Colors.white.withOpacity(0.6),
@@ -1557,7 +1558,7 @@ class _CommandWidgetState extends State<CommandWidget> {
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            'No Filter',
+                                            'ไม่กรอง',
                                             style: TextStyle(
                                               color: _selectedCategoryId == null
                                                   ? Colors.blue
@@ -1569,7 +1570,7 @@ class _CommandWidgetState extends State<CommandWidget> {
                                             ),
                                           ),
                                           Text(
-                                            'Show all cameras',
+                                            'แสดงกล้องทั้งหมด',
                                             style: TextStyle(
                                               color: _selectedCategoryId == null
                                                   ? Colors.blue.withOpacity(0.7)
@@ -1593,7 +1594,7 @@ class _CommandWidgetState extends State<CommandWidget> {
                                 const PopupMenuDivider(height: 1),
                                 ..._categories.map((category) {
                                   final id = category['id']?.toString();
-                                  final name = category['name']?.toString() ?? 'Unknown';
+                                  final name = category['name']?.toString() ?? 'ไม่ทราบ';
                                   final isSelected = _selectedCategoryId == id;
                                   return PopupMenuItem<String?>(
                                     value: id,
@@ -1672,7 +1673,7 @@ class _CommandWidgetState extends State<CommandWidget> {
                           Icon(Icons.touch_app, color: Colors.white, size: 14),
                           SizedBox(width: 6),
                           Text(
-                            'Tap to select · tap another to swap',
+                            'แตะเพื่อเลือก · แตะอีกช่องเพื่อสลับ',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 11,
@@ -1724,7 +1725,7 @@ class _CommandWidgetState extends State<CommandWidget> {
                                       const SizedBox(height: 12),
                                       Text(
                                         snap.data?.error ??
-                                            'Stream unavailable',
+                                            context.tr('command.stream_unavailable'),
                                         style: const TextStyle(
                                             color: Colors.white60,
                                             fontSize: 14),
@@ -1732,7 +1733,7 @@ class _CommandWidgetState extends State<CommandWidget> {
                                       ),
                                       const SizedBox(height: 16),
                                       const Text(
-                                        'Double-tap to exit',
+                                        'แตะสองครั้งเพื่อออก',
                                         style: TextStyle(
                                             color: Colors.white30,
                                             fontSize: 11),
@@ -1805,7 +1806,7 @@ class _CommandWidgetState extends State<CommandWidget> {
                                   borderRadius: BorderRadius.circular(16),
                                 ),
                                 child: const Text(
-                                  'Double-tap stream · tap ✕ to exit',
+                                  'แตะสองครั้งที่สตรีม · แตะ ✕ เพื่อออก',
                                   style: TextStyle(
                                       color: Colors.white70, fontSize: 11),
                                 ),

@@ -1,4 +1,5 @@
 import '/utils/flutter_flow/icon_button.dart';
+import '/core/i18n/i18n.dart';
 import '/utils/flutter_flow/theme.dart';
 import '/utils/flutter_flow/util.dart';
 import '/utils/flutter_flow/widgets.dart';
@@ -63,7 +64,9 @@ class _MarkerInfoPopupWidgetState extends State<MarkerInfoPopupWidget> {
   Widget build(BuildContext context) {
     final isOnline = widget.cameraData?['status']?.toString().toLowerCase() == 'online';
     final statusColor = isOnline ? Color(0xFF10B981) : Color(0xFFEF4444);
-    final statusText = isOnline ? 'Online' : 'Offline';
+    final statusText = isOnline
+      ? context.tr('marker_popup.online')
+      : context.tr('marker_popup.offline');
     final cameraId = widget.cameraData?['id']?.toString() ?? '';
     final categories = widget.cameraData?['categories'] as List<dynamic>?;
     final lastSeen = _parseLastSeen(widget.cameraData?['lastSeen']);
@@ -145,7 +148,7 @@ class _MarkerInfoPopupWidgetState extends State<MarkerInfoPopupWidget> {
                                         Text(
                                           valueOrDefault<String>(
                                             widget.cameraData?['name'],
-                                            'Camera',
+                                            context.tr('marker_popup.camera_fallback'),
                                           ),
                                           style: TextStyle(
                                             color: Colors.white,
@@ -298,7 +301,7 @@ class _MarkerInfoPopupWidgetState extends State<MarkerInfoPopupWidget> {
                         children: [
                           // Section title
                           Text(
-                            'CAMERA DETAILS',
+                            context.tr('marker_popup.camera_details'),
                             style: TextStyle(
                               fontSize: AppTextStyles.commandSmall,
                               fontWeight: FontWeight.bold,
@@ -313,7 +316,7 @@ class _MarkerInfoPopupWidgetState extends State<MarkerInfoPopupWidget> {
                               widget.cameraData!['address'].toString().isNotEmpty)
                             _buildPremiumInfoCard(
                               Icons.location_on_rounded,
-                              'Location',
+                              context.tr('marker_popup.location'),
                               widget.cameraData!['address'].toString(),
                               Color(0xFFEF4444),
                             ),
@@ -324,7 +327,7 @@ class _MarkerInfoPopupWidgetState extends State<MarkerInfoPopupWidget> {
                           if (widget.cameraData?['latLong'] != null)
                             _buildPremiumInfoCard(
                               Icons.my_location_rounded,
-                              'Coordinates',
+                              context.tr('marker_popup.coordinates'),
                               widget.cameraData!['latLong'].toString(),
                               Color(0xFF3B82F6),
                             ),
@@ -336,7 +339,7 @@ class _MarkerInfoPopupWidgetState extends State<MarkerInfoPopupWidget> {
                               widget.cameraData!['rtspUrl'].toString().isNotEmpty)
                             _buildPremiumInfoCard(
                               Icons.link_rounded,
-                              'Stream URL',
+                              context.tr('marker_popup.stream_url'),
                               widget.cameraData!['rtspUrl'].toString(),
                               Color(0xFF8B5CF6),
                               isMonospace: true,
@@ -407,7 +410,9 @@ class _MarkerInfoPopupWidgetState extends State<MarkerInfoPopupWidget> {
                                         ),
                                         SizedBox(width: 8),
                                         Text(
-                                          isOnline ? 'View Live Feed' : 'Camera Offline',
+                                          isOnline
+                                              ? context.tr('marker_popup.view_live_feed')
+                                              : context.tr('marker_popup.camera_offline'),
                                           style: TextStyle(
                                             fontSize: AppTextStyles.labelNormal,
                                             fontWeight: FontWeight.bold,
@@ -449,7 +454,7 @@ class _MarkerInfoPopupWidgetState extends State<MarkerInfoPopupWidget> {
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            'This camera is currently offline and unavailable for viewing',
+                                            context.tr('marker_popup.offline_hint'),
                                             style: TextStyle(
                                               color: Color(0xFFDC2626),
                                               fontSize: AppTextStyles.commandBody,
@@ -459,7 +464,12 @@ class _MarkerInfoPopupWidgetState extends State<MarkerInfoPopupWidget> {
                                           if (lastSeen != null) ...[
                                             SizedBox(height: 4),
                                             Text(
-                                              'Last seen ${TimeAgoFormatter.format(lastSeen)}',
+                                              context.tr(
+                                                'marker_popup.last_seen',
+                                                params: {
+                                                  'timeAgo': TimeAgoFormatter.format(lastSeen),
+                                                },
+                                              ),
                                               style: TextStyle(
                                                 color: const Color(0xFFB91C1C),
                                                 fontSize: AppTextStyles.commandBody,
@@ -556,7 +566,7 @@ class _MarkerInfoPopupWidgetState extends State<MarkerInfoPopupWidget> {
                           // Copy to clipboard functionality
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text('Copied to clipboard'),
+                              content: Text(context.tr('marker_popup.copied')),
                               duration: Duration(seconds: 2),
                               behavior: SnackBarBehavior.floating,
                             ),

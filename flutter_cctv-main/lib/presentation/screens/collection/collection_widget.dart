@@ -1,4 +1,5 @@
 import '/data/services/index.dart';
+import '/core/i18n/i18n.dart';
 import '/presentation/widgets/nav_bar_main_widget.dart';
 import '/presentation/widgets/shared/category_chip.dart';
 import '/utils/flutter_flow_data_table.dart';
@@ -63,9 +64,10 @@ class _CollectionWidgetState extends State<CollectionWidget> {
   /// Fetch a page of cameras from the API.
   Future<void> _fetchCameras({required int page, String search = ''}) async {
     if (!mounted) return;
-    safeSetState(() => _model.isLoading = true);
 
     try {
+      safeSetState(() => _model.isLoading = true);
+
       final response = await CameraService().getCameras(
         page: page.toString(),
         limit: CollectionModel.pageSize.toString(),
@@ -79,32 +81,43 @@ class _CollectionWidgetState extends State<CollectionWidget> {
         final meta = getJsonField(response.jsonBody, r'$.meta');
 
         // Single atomic rebuild — all state set together
-        safeSetState(() {
-          _model.listOfCameras = dataList;
-          _model.currentPage = page;
-          _model.searchQuery = search;
-          _model.isLoading = false;
-          if (meta != null && meta is Map<String, dynamic>) {
-            _model.totalCameras =
-                (meta['totalItems'] as int?) ?? dataList.length;
-            _model.totalPages = (meta['totalPages'] as int?) ?? 1;
-          } else {
-            _model.totalCameras = dataList.length;
-            _model.totalPages = 1;
+        if (mounted) {
+          safeSetState(() {
+            _model.listOfCameras = dataList;
+            _model.currentPage = page;
+            _model.searchQuery = search;
+            _model.isLoading = false;
+            if (meta != null && meta is Map<String, dynamic>) {
+              _model.totalCameras =
+                  (meta['totalItems'] as int?) ?? dataList.length;
+              _model.totalPages = (meta['totalPages'] as int?) ?? 1;
+            } else {
+              _model.totalCameras = dataList.length;
+              _model.totalPages = 1;
+            }
+          });
+
+          // Reset PaginatedDataTable to first page — guarded with mounted & try-catch
+          try {
+            if (_model.paginatedDataTableController.paginatorController != null) {
+              _model.paginatedDataTableController.paginatorController
+                  .goToFirstPage();
+            }
+          } catch (e) {
+            debugPrint('Could not reset paginator (not yet attached): $e');
           }
-        });
+        }
       } else {
         debugPrint('API error: ${response.statusCode}');
-        safeSetState(() {
-          _model.listOfCameras = [];
-          _model.currentPage = page;
-          _model.searchQuery = search;
-          _model.isLoading = false;
-        });
+        if (mounted) {
+          safeSetState(() {
+            _model.listOfCameras = [];
+            _model.currentPage = page;
+            _model.searchQuery = search;
+            _model.isLoading = false;
+          });
+        }
       }
-
-      // Reset PaginatedDataTable to page 1 so it doesn't stay at a stale offset
-      _model.paginatedDataTableController.paginatorController.goToFirstPage();
     } catch (e) {
       debugPrint('Error fetching cameras: $e');
       if (mounted) safeSetState(() => _model.isLoading = false);
@@ -330,7 +343,7 @@ class _CollectionWidgetState extends State<CollectionWidget> {
           ),
           const SizedBox(width: 6),
           Text(
-            isOnline ? 'Online' : 'Offline',
+            isOnline ? context.tr('marker_popup.online') : context.tr('marker_popup.offline'),
             style: TextStyle(
               color: isOnline ? const Color(0xFF15803D) : const Color(0xFFDC2626),
               fontSize: 12,
@@ -385,7 +398,7 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                     children: [
                       // Page title
                       Text(
-                        'Category Management',
+                        'จัดการหมวดหมู่',
                         style: FlutterFlowTheme.of(context).headlineLarge.override(
                               fontFamily:
                                   FlutterFlowTheme.of(context).headlineLargeFamily,
@@ -436,7 +449,7 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                       _onSearchChanged(value);
                                     },
                                     decoration: InputDecoration(
-                                      hintText: 'Search cameras...',
+                                      hintText: context.tr('collection.search_hint'),
                                       hintStyle: const TextStyle(
                                           color: Color(0xFF9CA3AF),
                                           fontSize: 14),
@@ -516,7 +529,7 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                               color: Colors.white),
                                           SizedBox(width: 8.0),
                                           Text(
-                                              'Search cleared, showing all cameras'),
+                                              context.tr('collection.search_cleared')),
                                         ],
                                       ),
                                       duration: Duration(milliseconds: 2000),
@@ -577,11 +590,11 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                                     Icon(Icons.video_library,
                                                         color: Color(0xFF4B39EF)),
                                                     SizedBox(width: 8.0),
-                                                    Text('Manage Categories'),
+                                                    Text('จัดการหมวดหมู่'),
                                                     Spacer(),
                                                     IconButton(
                                                       icon: Icon(Icons.add_circle, color: Color(0xFF4B39EF)),
-                                                      tooltip: 'Create New Category',
+                                                      tooltip: 'สร้างหมวดหมู่ใหม่',
                                                       onPressed: () async {
                                                         // Show create category dialog
                                                         final TextEditingController newCategoryController = 
@@ -596,14 +609,14 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                                                   Icon(Icons.create_new_folder_outlined,
                                                                       color: Color(0xFF4B39EF)),
                                                                   SizedBox(width: 8.0),
-                                                                  Text('Create New Category'),
+                                                                  Text('สร้างหมวดหมู่ใหม่'),
                                                                 ],
                                                               ),
                                                               content: TextField(
                                                                 controller: newCategoryController,
                                                                 decoration: InputDecoration(
-                                                                  labelText: 'Category Name *',
-                                                                  hintText: 'e.g., Entrance Cameras',
+                                                                  labelText: 'ชื่อหมวดหมู่ *',
+                                                                  hintText: 'เช่น กล้องทางเข้า',
                                                                   border: OutlineInputBorder(
                                                                     borderRadius: BorderRadius.circular(8.0),
                                                                   ),
@@ -615,7 +628,7 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                                               actions: [
                                                                 TextButton(
                                                                   onPressed: () => Navigator.pop(createContext),
-                                                                  child: Text('Cancel'),
+                                                                  child: Text('ยกเลิก'),
                                                                 ),
                                                                 ElevatedButton(
                                                                   onPressed: () async {
@@ -623,7 +636,7 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                                                     if (name.isEmpty) {
                                                                       ScaffoldMessenger.of(context).showSnackBar(
                                                                         SnackBar(
-                                                                          content: Text('Please enter a category name'),
+                                                                          content: Text('กรุณากรอกชื่อหมวดหมู่'),
                                                                           backgroundColor: Colors.red,
                                                                         ),
                                                                       );
@@ -649,7 +662,7 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                                                     if (createResponse.succeeded) {
                                                                       ScaffoldMessenger.of(context).showSnackBar(
                                                                         SnackBar(
-                                                                          content: Text('Category "$name" created!'),
+                                                                          content: Text('สร้างหมวดหมู่ "$name" สำเร็จ'),
                                                                           backgroundColor: Color(0xFF4CAF50),
                                                                         ),
                                                                       );
@@ -658,7 +671,7 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                                                     } else {
                                                                       ScaffoldMessenger.of(context).showSnackBar(
                                                                         SnackBar(
-                                                                          content: Text('Failed to create category'),
+                                                                          content: Text('สร้างหมวดหมู่ไม่สำเร็จ'),
                                                                           backgroundColor: Colors.red,
                                                                         ),
                                                                       );
@@ -667,7 +680,7 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                                                   style: ElevatedButton.styleFrom(
                                                                     backgroundColor: Color(0xFF4B39EF),
                                                                   ),
-                                                                  child: Text('Create',
+                                                                  child: Text('สร้าง',
                                                                       style: TextStyle(color: Colors.white)),
                                                                 ),
                                                               ],
@@ -694,13 +707,13 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                                             ),
                                                             SizedBox(height: 16.0),
                                                             Text(
-                                                              'No categories yet',
+                                                              'ยังไม่มีหมวดหมู่',
                                                               style: FlutterFlowTheme.of(context)
                                                                   .titleMedium,
                                                             ),
                                                             SizedBox(height: 8.0),
                                                             Text(
-                                                              'Click the + icon above to create your first category',
+                                                              'กดไอคอน + ด้านบนเพื่อสร้างหมวดหมู่แรก',
                                                               style: FlutterFlowTheme.of(context)
                                                                   .bodySmall,
                                                               textAlign: TextAlign.center,
@@ -750,7 +763,9 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                                                                 : Icons.expand_more,
                                                                             color: categoryColor.text,
                                                                           ),
-                                                                          tooltip: isExpanded ? 'Collapse' : 'Expand',
+                                                                          tooltip: isExpanded
+                                                                              ? context.tr('collection.tooltip.collapse')
+                                                                              : context.tr('collection.tooltip.expand'),
                                                                           onPressed: () {
                                                                             setDialogState(() {
                                                                               expandedMap[categoryId] = !isExpanded;
@@ -763,7 +778,7 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                                                             color: categoryColor.text,
                                                                             size: 20.0,
                                                                           ),
-                                                                          tooltip: 'Edit Name',
+                                                                          tooltip: context.tr('collection.tooltip.edit_name'),
                                                                           onPressed: () async {
                                                                             final TextEditingController editController =
                                                                                 TextEditingController(text: categoryName);
@@ -772,11 +787,11 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                                                               context: context,
                                                                               builder: (editContext) {
                                                                                 return AlertDialog(
-                                                                                  title: Text('Edit Category'),
+                                                                                  title: Text(context.tr('collection.edit.title')),
                                                                                   content: TextField(
                                                                                     controller: editController,
                                                                                     decoration: InputDecoration(
-                                                                                      labelText: 'Category Name',
+                                                                                      labelText: context.tr('collection.edit.name_label'),
                                                                                       border: OutlineInputBorder(),
                                                                                     ),
                                                                                     autofocus: true,
@@ -785,7 +800,7 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                                                                     TextButton(
                                                                                       onPressed: () =>
                                                                                           Navigator.pop(editContext),
-                                                                                      child: Text('Cancel'),
+                                                                                      child: Text(context.tr('common.cancel')),
                                                                                     ),
                                                                                     ElevatedButton(
                                                                                       onPressed: () async {
@@ -795,7 +810,7 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                                                                               .showSnackBar(
                                                                                             SnackBar(
                                                                                               content: Text(
-                                                                                                  'Please enter a name'),
+                                                                                                  context.tr('collection.edit.name_required')),
                                                                                               backgroundColor: Colors.red,
                                                                                             ),
                                                                                           );
@@ -828,7 +843,7 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                                                                               .showSnackBar(
                                                                                             SnackBar(
                                                                                               content: Text(
-                                                                                                  'Category updated!'),
+                                                                                                  context.tr('collection.edit.updated_success')),
                                                                                               backgroundColor:
                                                                                                   Color(0xFF4CAF50),
                                                                                             ),
@@ -839,7 +854,7 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                                                                               .showSnackBar(
                                                                                             SnackBar(
                                                                                               content: Text(
-                                                                                                  'Failed to update'),
+                                                                                                  context.tr('collection.edit.update_failed')),
                                                                                               backgroundColor: Colors.red,
                                                                                             ),
                                                                                           );
@@ -849,7 +864,7 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                                                                         backgroundColor:
                                                                                             Color(0xFF4B39EF),
                                                                                       ),
-                                                                                      child: Text('Save',
+                                                                                      child: Text(context.tr('collection.edit.save'),
                                                                                           style: TextStyle(
                                                                                               color: Colors.white)),
                                                                                     ),
@@ -865,7 +880,7 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                                                             color: Colors.red,
                                                                             size: 20.0,
                                                                           ),
-                                                                          tooltip: 'Delete',
+                                                                          tooltip: context.tr('common.delete'),
                                                                           onPressed: () async {
                                                                             // ── Normal delete confirm ──────────────────────────────
                                                                             final confirmDelete =
@@ -878,7 +893,7 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                                                                       Icon(Icons.warning_amber_rounded,
                                                                                           color: Colors.red),
                                                                                       SizedBox(width: 8.0),
-                                                                                      Text('Delete Category'),
+                                                                                      Text(context.tr('collection.delete.title')),
                                                                                     ],
                                                                                   ),
                                                                                   content: Column(
@@ -887,7 +902,11 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                                                                         CrossAxisAlignment.start,
                                                                                     children: [
                                                                                       Text(
-                                                                                          'Delete "$categoryName"?'),
+                                                                                        context.tr(
+                                                                                          'collection.delete.confirm',
+                                                                                          params: {'name': categoryName},
+                                                                                        ),
+                                                                                      ),
                                                                                       SizedBox(height: 12.0),
                                                                                       Row(
                                                                                         children: [
@@ -897,7 +916,7 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                                                                               color: Colors.red),
                                                                                           SizedBox(width: 4.0),
                                                                                           Text(
-                                                                                            'This action can\'t be undo',
+                                                                                            context.tr('collection.delete.undo_warning'),
                                                                                             style: TextStyle(
                                                                                               color: Colors.red,
                                                                                               fontSize: 12,
@@ -914,7 +933,7 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                                                                       onPressed: () =>
                                                                                           Navigator.pop(
                                                                                               confirmContext, false),
-                                                                                      child: Text('Cancel'),
+                                                                                      child: Text(context.tr('common.cancel')),
                                                                                     ),
                                                                                     ElevatedButton(
                                                                                       onPressed: () =>
@@ -924,7 +943,7 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                                                                           ElevatedButton.styleFrom(
                                                                                         backgroundColor: Colors.red,
                                                                                       ),
-                                                                                      child: Text('Delete',
+                                                                                      child: Text(context.tr('common.delete'),
                                                                                           style: TextStyle(
                                                                                               color: Colors.white)),
                                                                                     ),
@@ -956,7 +975,7 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                                                                 ScaffoldMessenger.of(context)
                                                                                     .showSnackBar(SnackBar(
                                                                                   content:
-                                                                                      Text('Category deleted!'),
+                                                                                      Text(context.tr('collection.delete.deleted_success')),
                                                                                   backgroundColor:
                                                                                       Color(0xFF4CAF50),
                                                                                 ));
@@ -985,7 +1004,7 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                                                                                 .warning_amber_rounded,
                                                                                             color: Colors.orange),
                                                                                         SizedBox(width: 8.0),
-                                                                                        Text('Category in Use'),
+                                                                                        Text(context.tr('collection.delete.in_use_title')),
                                                                                       ],
                                                                                     ),
                                                                                     content: Column(
@@ -994,11 +1013,14 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                                                                           CrossAxisAlignment.start,
                                                                                       children: [
                                                                                         Text(
-                                                                                          '"$categoryName" is still assigned to one or more cameras.',
+                                                                                          context.tr(
+                                                                                            'collection.delete.in_use_message',
+                                                                                            params: {'name': categoryName},
+                                                                                          ),
                                                                                         ),
                                                                                         SizedBox(height: 8.0),
                                                                                         Text(
-                                                                                          'Force delete will remove this category from ALL cameras and then delete it.',
+                                                                                          context.tr('collection.delete.force_delete_message'),
                                                                                           style: TextStyle(
                                                                                               color:
                                                                                                   Color(0xFF6B7280)),
@@ -1012,7 +1034,7 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                                                                                 color: Colors.red),
                                                                                             SizedBox(width: 4.0),
                                                                                             Text(
-                                                                                              'This action can\'t be undo',
+                                                                                              context.tr('collection.delete.undo_warning'),
                                                                                               style: TextStyle(
                                                                                                 color: Colors.red,
                                                                                                 fontSize: 12,
@@ -1029,7 +1051,7 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                                                                         onPressed: () =>
                                                                                             Navigator.pop(
                                                                                                 forceContext, false),
-                                                                                        child: Text('Cancel'),
+                                                                                        child: Text(context.tr('common.cancel')),
                                                                                       ),
                                                                                       ElevatedButton(
                                                                                         onPressed: () =>
@@ -1041,7 +1063,7 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                                                                               Color(0xFFEF4444),
                                                                                         ),
                                                                                         child: Text(
-                                                                                            'Force Delete',
+                                                                                            context.tr('collection.delete.force_delete'),
                                                                                             style: TextStyle(
                                                                                                 color: Colors.white)),
                                                                                       ),
@@ -1076,8 +1098,8 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                                                                     .showSnackBar(SnackBar(
                                                                                   content: Text(
                                                                                     forceResponse.succeeded
-                                                                                        ? 'Category force deleted!'
-                                                                                        : 'Force delete failed',
+                                                                                        ? context.tr('collection.delete.force_deleted_success')
+                                                                                        : context.tr('collection.delete.force_delete_failed'),
                                                                                   ),
                                                                                   backgroundColor: forceResponse
                                                                                           .succeeded
@@ -1093,7 +1115,13 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                                                                 ScaffoldMessenger.of(context)
                                                                                     .showSnackBar(SnackBar(
                                                                                   content: Text(
-                                                                                      'Failed to delete (${deleteResponse.statusCode})'),
+                                                                                    context.tr(
+                                                                                      'collection.delete.delete_failed',
+                                                                                      params: {
+                                                                                        'statusCode': '${deleteResponse.statusCode}'
+                                                                                      },
+                                                                                    ),
+                                                                                  ),
                                                                                   backgroundColor: Colors.red,
                                                                                 ));
                                                                             }
@@ -1135,7 +1163,10 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                                                                     MainAxisAlignment.spaceBetween,
                                                                                 children: [
                                                                                   Text(
-                                                                                    'Cameras (${cameras.length})',
+                                                                                    context.tr(
+                                                                                      'collection.cameras_count',
+                                                                                      params: {'count': '${cameras.length}'},
+                                                                                    ),
                                                                                     style: FlutterFlowTheme.of(
                                                                                             context)
                                                                                         .labelLarge
@@ -1170,7 +1201,8 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                                                                             .showSnackBar(
                                                                                           SnackBar(
                                                                                             content: Text(
-                                                                                                'All cameras are already in this category'),
+                                                                                              context.tr('collection.all_cameras_in_category'),
+                                                                                            ),
                                                                                             backgroundColor:
                                                                                                 Color(0xFFFFA726),
                                                                                           ),
@@ -1184,15 +1216,14 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                                                                           return StatefulBuilder(
                                                                                             builder: (context, setSearchState) {
                                                                                               final searchController = TextEditingController();
-                                                                                              String searchQuery = '';
                                                                                               
                                                                                               final filteredCameras = availableCameras.where((camera) {
                                                                                                 final cameraName = getJsonField(camera, r'$.name').toString().toLowerCase();
-                                                                                                return cameraName.contains(searchQuery.toLowerCase());
+                                                                                                return cameraName.contains(searchController.text.toLowerCase());
                                                                                               }).toList();
                                                                                               
                                                                                               return AlertDialog(
-                                                                                                title: Text('Add Cameras to "$categoryName"'),
+                                                                                                title: Text('เพิ่มกล้องไปยัง "$categoryName"'),
                                                                                                 content: Container(
                                                                                                   width: 500,
                                                                                                   height: 400,
@@ -1203,7 +1234,7 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                                                                                         controller: searchController,
                                                                                                         decoration: InputDecoration(
                                                                                                           prefixIcon: Icon(Icons.search),
-                                                                                                          hintText: 'Search cameras...',
+                                                                                                          hintText: 'ค้นหากล้อง...',
                                                                                                           border: OutlineInputBorder(
                                                                                                             borderRadius: BorderRadius.circular(8),
                                                                                                           ),
@@ -1213,9 +1244,7 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                                                                                           ),
                                                                                                         ),
                                                                                                         onChanged: (value) {
-                                                                                                          setSearchState(() {
-                                                                                                            searchQuery = value;
-                                                                                                          });
+                                                                                                          setSearchState(() {});
                                                                                                         },
                                                                                                       ),
                                                                                                       SizedBox(height: 16),
@@ -1223,7 +1252,7 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                                                                                       Align(
                                                                                                         alignment: Alignment.centerLeft,
                                                                                                         child: Text(
-                                                                                                          '${filteredCameras.length} camera(s) available',
+                                                                                                          '${filteredCameras.length} กล้องที่พร้อมใช้งาน',
                                                                                                           style: TextStyle(
                                                                                                             fontSize: AppTextStyles.commandBody,
                                                                                                             color: Colors.grey[600],
@@ -1238,7 +1267,7 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                                                                                         child: filteredCameras.isEmpty
                                                                                                           ? Center(
                                                                                                               child: Text(
-                                                                                                                'No cameras found',
+                                                                                                                'ไม่พบกล้อง',
                                                                                                                 style: TextStyle(color: Colors.grey),
                                                                                                               ),
                                                                                                             )
@@ -1304,7 +1333,7 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                                                                                           if (addResponse.succeeded) {
                                                                                                             scaffoldMessenger.showSnackBar(
                                                                                                               SnackBar(
-                                                                                                                content: Text('Camera added!'),
+                                                                                                                content: Text('เพิ่มกล้องสำเร็จ'),
                                                                                                                 backgroundColor: Color(0xFF4CAF50),
                                                                                                               ),
                                                                                                             );
@@ -1315,7 +1344,7 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                                                                                           } else {
                                                                                                             scaffoldMessenger.showSnackBar(
                                                                                                               SnackBar(
-                                                                                                                content: Text('Failed to add camera'),
+                                                                                                                content: Text('เพิ่มกล้องไม่สำเร็จ'),
                                                                                                                 backgroundColor: Colors.red,
                                                                                                               ),
                                                                                                             );
@@ -1330,7 +1359,7 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                                                                                           if (mounted) {
                                                                                                             scaffoldMessenger.showSnackBar(
                                                                                                               SnackBar(
-                                                                                                                content: Text('Error: ${e.toString()}'),
+                                                                                                                content: Text('ข้อผิดพลาด: ${e.toString()}'),
                                                                                                                 backgroundColor: Colors.red,
                                                                                                               ),
                                                                                                             );
@@ -1348,7 +1377,7 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                                                                 actions: [
                                                                                   TextButton(
                                                                                     onPressed: () => Navigator.pop(addContext),
-                                                                                    child: Text('Close'),
+                                                                                    child: Text('ปิด'),
                                                                                   ),
                                                                                 ],
                                                                               );
@@ -1359,7 +1388,7 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                                                                     },
                                                                                     icon: Icon(Icons.add,
                                                                                         size: 16.0),
-                                                                                    label: Text('Add Camera'),
+                                                                                    label: Text('เพิ่มกล้อง'),
                                                                                     style: ElevatedButton.styleFrom(
                                                                                       backgroundColor:
                                                                                           Color(0xFF39D2C0),
@@ -1377,7 +1406,7 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                                                                   padding: EdgeInsets.all(16.0),
                                                                                   child: Center(
                                                                                     child: Text(
-                                                                                      'No cameras in this category',
+                                                                                      'ไม่มีรายการกล้องในหมวดหมู่นี้',
                                                                                       style: FlutterFlowTheme.of(
                                                                                               context)
                                                                                           .bodySmall
@@ -1420,7 +1449,7 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                                                                         color: Colors.red,
                                                                                         size: 20.0,
                                                                                       ),
-                                                                                      tooltip: 'Remove',
+                                                                                        tooltip: 'ลบออก',
                                                                                       onPressed: () async {
                                                                                         final confirmRemove =
                                                                                             await showDialog<
@@ -1430,9 +1459,9 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                                                                               (confirmContext) {
                                                                                             return AlertDialog(
                                                                                               title: Text(
-                                                                                                  'Remove Camera'),
+                                                                                              'ลบกล้อง'),
                                                                                               content: Text(
-                                                                                                  'Remove "$cameraName" from "$categoryName"?'),
+                                                                                              'ต้องการลบ "$cameraName" ออกจาก "$categoryName" หรือไม่?'),
                                                                                               actions: [
                                                                                                 TextButton(
                                                                                                   onPressed: () =>
@@ -1440,7 +1469,7 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                                                                                           confirmContext,
                                                                                                           false),
                                                                                                   child: Text(
-                                                                                                      'Cancel'),
+                                                                                                'ยกเลิก'),
                                                                                                 ),
                                                                                                 ElevatedButton(
                                                                                                   onPressed: () =>
@@ -1454,7 +1483,7 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                                                                                             .red,
                                                                                                   ),
                                                                                                   child: Text(
-                                                                                                      'Remove',
+                                                                                                'ลบออก',
                                                                                                       style: TextStyle(
                                                                                                           color: Colors
                                                                                                               .white)),
@@ -1506,7 +1535,7 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                                                                             if (removeResponse.succeeded) {
                                                                                               scaffoldMessenger.showSnackBar(
                                                                                                 SnackBar(
-                                                                                                  content: Text('Camera removed!'),
+                                                                                                  content: Text('ลบกล้องสำเร็จ'),
                                                                                                   backgroundColor: Color(0xFF4CAF50),
                                                                                                 ),
                                                                                               );
@@ -1517,7 +1546,7 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                                                                             } else {
                                                                                               scaffoldMessenger.showSnackBar(
                                                                                                 SnackBar(
-                                                                                                  content: Text('Failed to remove camera'),
+                                                                                                  content: Text('ลบกล้องไม่สำเร็จ'),
                                                                                                   backgroundColor: Colors.red,
                                                                                                 ),
                                                                                               );
@@ -1532,7 +1561,7 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                                                                             if (mounted) {
                                                                                               scaffoldMessenger.showSnackBar(
                                                                                                 SnackBar(
-                                                                                                  content: Text('Error: ${e.toString()}'),
+                                                                                                  content: Text('ข้อผิดพลาด: ${e.toString()}'),
                                                                                                   backgroundColor: Colors.red,
                                                                                                 ),
                                                                                               );
@@ -1560,7 +1589,7 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                                       Navigator.pop(dialogContext);
                                                       safeSetState(() {});
                                                     },
-                                                    child: Text('Close'),
+                                                    child: Text('ปิด'),
                                                   ),
                                                 ],
                                               );
@@ -1580,7 +1609,7 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                     );
                                   }
                                 },
-                                text: 'Manage Categories',
+                                text: 'จัดการหมวดหมู่',
                                 icon: Icon(
                                   Icons.settings,
                                   size: 22.0,
@@ -1650,8 +1679,8 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                                 SizedBox(height: 16.0),
                                                 Text(
                                                   _model.textController.text.isNotEmpty
-                                                      ? 'No cameras found matching "${_model.textController.text}"'
-                                                      : 'No cameras available',
+                                                      ? 'ไม่พบกล้องที่ตรงกับ "${_model.textController.text}"'
+                                                      : 'ไม่มีกล้องที่ใช้งานได้',
                                                   style: FlutterFlowTheme.of(context).titleMedium,
                                                   textAlign: TextAlign.center,
                                                 ),
@@ -1671,7 +1700,7 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                                   label: DefaultTextStyle.merge(
                                                     softWrap: true,
                                                     child: Text(
-                                                      'Name',
+                                                      'ชื่อ',
                                                       style: FlutterFlowTheme
                                                               .of(context)
                                                           .labelMedium
@@ -1696,7 +1725,7 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                                   label: DefaultTextStyle.merge(
                                                     softWrap: true,
                                                     child: Text(
-                                                      'Address',
+                                                      'ที่อยู่',
                                                       style: FlutterFlowTheme
                                                               .of(context)
                                                           .labelMedium

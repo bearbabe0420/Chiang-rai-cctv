@@ -1,4 +1,5 @@
 // Automatic FlutterFlow imports
+import '/core/i18n/i18n.dart';
 import '/utils/flutter_flow/theme.dart';
 import '/utils/flutter_flow/util.dart';
 import '../index.dart'; // Imports other custom widgets
@@ -62,8 +63,8 @@ class _CameraDashboardTableState extends State<CameraDashboardTable> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           /// TITLE
-          const Text(
-            "List camera",
+          Text(
+            context.tr('camera_dashboard.title'),
             style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,
@@ -76,9 +77,9 @@ class _CameraDashboardTableState extends State<CameraDashboardTable> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _statCard("Total cameras", total, Icons.home_work_outlined),
-              _statCard("On-line cameras", online, Icons.videocam),
-              _statCard("Off-line cameras", offline, Icons.videocam_off),
+              _statCard(context.tr('camera_dashboard.total_cameras'), total, Icons.home_work_outlined),
+              _statCard(context.tr('camera_dashboard.online_cameras'), online, Icons.videocam),
+              _statCard(context.tr('camera_dashboard.offline_cameras'), offline, Icons.videocam_off),
             ],
           ),
 
@@ -97,10 +98,10 @@ class _CameraDashboardTableState extends State<CameraDashboardTable> {
                     border: Border.all(color: Colors.grey.shade300),
                   ),
                   child: TextField(
-                    decoration: const InputDecoration(
-                      hintText: "search find camera....",
+                    decoration: InputDecoration(
+                      hintText: context.tr('camera_dashboard.search_hint'),
                       border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 16),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
                     ),
                     onChanged: (val) {
                       setState(() {
@@ -115,7 +116,7 @@ class _CameraDashboardTableState extends State<CameraDashboardTable> {
 
               _blackButton(
                 icon: Icons.search,
-                label: "search",
+                label: context.tr('common.search'),
                 onTap: () {},
               ),
 
@@ -123,7 +124,7 @@ class _CameraDashboardTableState extends State<CameraDashboardTable> {
 
               _blackButton(
                 icon: Icons.add,
-                label: "add camera",
+                label: context.tr('camera_list.add_camera'),
                 onTap: () {
                   widget.onEdit?.call(null);
                 },
@@ -133,7 +134,7 @@ class _CameraDashboardTableState extends State<CameraDashboardTable> {
 
               _blackButton(
                 icon: Icons.file_upload_outlined,
-                label: "Import files",
+                label: context.tr('camera_dashboard.import_files'),
                 onTap: () {},
               ),
             ],
@@ -166,14 +167,14 @@ class _CameraDashboardTableState extends State<CameraDashboardTable> {
                 bottom: BorderSide(color: Color(0xffe5e7eb)),
               ),
             ),
-            child: const Row(
+            child: Row(
               children: [
-                _HeaderCell("Name", 2),
-                _HeaderCell("LatLong", 2),
-                _HeaderCell("Address", 3),
-                _HeaderCell("Status", 1),
-                _HeaderCell("Category", 2),
-                _HeaderCell("Action", 2),
+                _HeaderCell("${context.tr('camera_list.columns.name')}", 2),
+                _HeaderCell("${context.tr('camera_list.columns.latlong')}", 2),
+                _HeaderCell("${context.tr('camera_list.columns.address')}", 3),
+                _HeaderCell("${context.tr('camera_list.columns.status')}", 1),
+                _HeaderCell("${context.tr('camera_list.columns.category')}", 2),
+                _HeaderCell("${context.tr('camera_list.columns.action')}", 2),
               ],
             ),
           ),

@@ -1,4 +1,5 @@
 import '/core/state/app_state.dart';
+import '/core/i18n/i18n.dart';
 import '/data/services/index.dart';
 import '/utils/flutter_flow/animations.dart';
 import '/utils/flutter_flow/theme.dart';
@@ -98,7 +99,7 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
     if (username.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Please fill in Username and Password'),
+          content: Text(context.tr('login.fill_required')),
           backgroundColor: const Color(0xFFEF4444),
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -125,7 +126,7 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
       safeSetState(() => _model.isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Login failed. Please check your credentials.'),
+          content: Text(context.tr('login.failed')),
           backgroundColor: const Color(0xFFEF4444),
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -207,7 +208,7 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
                               Text(
-                                'Welcome Back',
+                                context.tr('login.welcome_back'),
                                 textAlign: TextAlign.center,
                                 style: FlutterFlowTheme.of(context)
                                     .displaySmall
@@ -231,7 +232,7 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                 padding: EdgeInsetsDirectional.fromSTEB(
                                     0.0, 12.0, 0.0, 24.0),
                                 child: Text(
-                                  'Fill out the information below in order to access your account.',
+                                  context.tr('login.subtitle'),
                                   textAlign: TextAlign.center,
                                   style: FlutterFlowTheme.of(context)
                                       .labelMedium
@@ -277,7 +278,7 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                     obscureText: false,
                                     textInputAction: TextInputAction.next,
                                     decoration: InputDecoration(
-                                      labelText: 'Username',
+                                      labelText: context.tr('login.username'),
                                       labelStyle: FlutterFlowTheme.of(context)
                                           .labelLarge
                                           .override(
@@ -382,7 +383,7 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                       }
                                     },
                                     decoration: InputDecoration(
-                                      labelText: 'Password',
+                                      labelText: context.tr('login.password'),
                                       labelStyle: FlutterFlowTheme.of(context)
                                           .labelLarge
                                           .override(
@@ -495,7 +496,9 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                   onPressed: _model.isLoading
                                       ? null
                                       : () => _triggerLogin(context),
-                                  text: _model.isLoading ? 'Loading...' : 'Log In',
+                                    text: _model.isLoading
+                                      ? context.tr('login.loading')
+                                      : context.tr('login.login'),
                                   options: FFButtonOptions(
                                     width: double.infinity,
                                     height: 44.0,

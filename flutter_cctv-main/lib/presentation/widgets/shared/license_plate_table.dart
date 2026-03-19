@@ -1,4 +1,5 @@
 // Automatic FlutterFlow imports
+import '/core/i18n/i18n.dart';
 import '/utils/flutter_flow/theme.dart';
 import '/utils/flutter_flow/util.dart';
 import '../index.dart'; // Imports other custom widgets
@@ -110,7 +111,7 @@ class _LicensePlateTableState extends State<LicensePlateTable> {
           _buildHeader(),
           Expanded(
             child: filteredData.isEmpty
-                ? const Center(child: Text("No Data Found"))
+                ? Center(child: Text(context.tr('legacy_plate_table.empty')))
                 : ListView.builder(
                     itemCount: pageData.length,
                     itemBuilder: (context, index) {
@@ -220,7 +221,7 @@ class _LicensePlateTableState extends State<LicensePlateTable> {
           child: TextField(
             controller: _searchController,
             decoration: InputDecoration(
-              hintText: "Search...",
+              hintText: context.tr('legacy_plate_table.search_hint'),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -242,23 +243,23 @@ class _LicensePlateTableState extends State<LicensePlateTable> {
     return Container(
       color: Colors.black,
       padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
-      child: const Row(
+      child: Row(
         children: [
           Expanded(
               flex: 2,
-              child: Text('License Plate',
+              child: Text('${context.tr('legacy_plate_table.columns.license_plate')}',
                   style: TextStyle(color: Colors.white, fontSize: AppTextStyles.tableHeader, fontWeight: FontWeight.w700))),
           Expanded(
               flex: 2,
-              child: Text('Camera ID',
+              child: Text('${context.tr('legacy_plate_table.columns.camera_id')}',
                   style: TextStyle(color: Colors.white, fontSize: AppTextStyles.tableHeader, fontWeight: FontWeight.w700))),
           Expanded(
               flex: 2,
-              child: Text('Timestamp',
+              child: Text('${context.tr('legacy_plate_table.columns.timestamp')}',
                   style: TextStyle(color: Colors.white, fontSize: AppTextStyles.tableHeader, fontWeight: FontWeight.w700))),
           Expanded(
               flex: 2,
-              child: Text('Picture',
+              child: Text('${context.tr('legacy_plate_table.columns.picture')}',
                   style: TextStyle(color: Colors.white, fontSize: AppTextStyles.tableHeader, fontWeight: FontWeight.w700))),
         ],
       ),

@@ -1,4 +1,5 @@
 import '/data/services/index.dart';
+import '/core/i18n/i18n.dart';
 import '/utils/flutter_flow/icon_button.dart';
 import '/utils/flutter_flow/theme.dart';
 import '/utils/flutter_flow/util.dart';
@@ -147,26 +148,26 @@ Widget build(BuildContext context) {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
 
-                    _editField(context, 'Camera Name',
+                    _editField(context, context.tr('camera_form.name_label'),
                         _model.textController1!, _model.textFieldFocusNode1!,
-                        hint: 'e.g. C8 T.T.San Tai'),
+                      hint: context.tr('camera_form.name_hint')),
 
                     const SizedBox(height: 18),
 
-                    _editField(context, 'LatLong',
+                    _editField(context, context.tr('camera_form.latlong_label'),
                         _model.textController2!, _model.textFieldFocusNode2!,
                         hint: '20.412001,99.994481'),
 
                     const SizedBox(height: 18),
 
-                    _editField(context, 'Address',
+                    _editField(context, context.tr('camera_form.address_label'),
                         _model.textController3!, _model.textFieldFocusNode3!,
                         hint: 'ที่อยู่',
                         maxLines: 2),
 
                     const SizedBox(height: 18),
 
-                    _editField(context, 'RTSP URL',
+                    _editField(context, context.tr('camera_form.rtsp_label'),
                         _model.textController4!, _model.textFieldFocusNode4!,
                         hint: 'rtsp://...',
                         required: false),
@@ -187,7 +188,7 @@ Widget build(BuildContext context) {
                                   color: Color(0xFFD1D5DB)),
                             ),
                             child: const Text(
-                              'Cancel',
+                              'ยกเลิก',
                               style: TextStyle(
                                 color: Color(0xFF374151),
                                 fontWeight: FontWeight.w600,
@@ -231,7 +232,7 @@ Widget build(BuildContext context) {
                                     .showSnackBar(
                                   SnackBar(
                                     content:
-                                        const Text('saved successfully'),
+                                      Text(context.tr('camera_form.save_success')),
                                     backgroundColor:
                                         const Color(0xFF16A34A),
                                     behavior:
@@ -247,7 +248,11 @@ Widget build(BuildContext context) {
                                     .showSnackBar(
                                   SnackBar(
                                     content: Text(
-                                        'Failed to save: ${response.statusCode}'),
+                                      context.tr(
+                                        'camera_form.save_failed',
+                                        params: {'statusCode': '${response.statusCode}'},
+                                      ),
+                                    ),
                                     backgroundColor:
                                         const Color(0xFFEF4444),
                                     behavior:
@@ -268,7 +273,7 @@ Widget build(BuildContext context) {
                                     color: Colors.white),
                                 SizedBox(width: 8),
                                 Text(
-                                  'Save',
+                                  'บันทึก',
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.w700,

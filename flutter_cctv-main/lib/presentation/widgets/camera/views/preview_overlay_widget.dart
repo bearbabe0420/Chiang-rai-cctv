@@ -1,6 +1,7 @@
 import '/utils/flutter_flow/util.dart';
 import '/utils/app_text_styles.dart';
 import '/presentation/widgets/index.dart' as custom_widgets;
+import '/core/i18n/i18n.dart';
 import 'package:flutter/material.dart';
 import '../models/preview_overlay_model.dart';
 export '../models/preview_overlay_model.dart';
@@ -102,12 +103,12 @@ class _PreviewOverlayWidgetState extends State<PreviewOverlayWidget> {
                         ),
                         const SizedBox(width: 12),
                         // Title
-                        const Expanded(
+                        Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Live Preview',
+                                context.tr('preview.live_preview'),
                                 style: TextStyle(
                                   color: Color.fromARGB(255, 0, 0, 0),
                                   fontSize: AppTextStyles.commandTitle,
@@ -121,7 +122,7 @@ class _PreviewOverlayWidgetState extends State<PreviewOverlayWidget> {
                                   _PulseDot(),
                                   SizedBox(width: 5),
                                   Text(
-                                    'Live',
+                                    context.tr('preview.live'),
                                     style: TextStyle(
                                       color: Color(0xFF10B981),
                                       fontSize: AppTextStyles.commandSmall,
@@ -253,7 +254,7 @@ class _CameraCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 4),
                       const Text(
-                        'LIVE',
+                        'สด',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: AppTextStyles.commandSmall,
@@ -328,14 +329,14 @@ class _NoStreamPlaceholder extends StatelessWidget {
     return Container(
       color: const Color(0xFF111827),
       alignment: Alignment.center,
-      child: const Column(
+      child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.videocam_off_rounded, color: Color(0xFF4B5563), size: 28),
-          SizedBox(height: 6),
+          const Icon(Icons.videocam_off_rounded, color: Color(0xFF4B5563), size: 28),
+          const SizedBox(height: 6),
           Text(
-            'No Camera ID',
-            style: TextStyle(
+            context.tr('preview.no_camera_id'),
+            style: const TextStyle(
               color: Color(0xFF6B7280),
               fontSize: AppTextStyles.commandSmall,
               fontWeight: FontWeight.w500,

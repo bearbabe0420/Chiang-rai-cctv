@@ -3,6 +3,7 @@ import '/presentation/widgets/map/views/marker_info_popup_widget.dart';
 import '/presentation/widgets/nav/views/nav_bar_main_widget.dart';
 import '/presentation/widgets/camera/views/preview_overlay_widget.dart';
 import '/data/repositories/camera_repository.dart';
+import '/core/i18n/i18n.dart';
 import '/utils/flutter_flow/theme.dart';
 import '/utils/flutter_flow/util.dart';
 import '/utils/flutter_flow/widgets.dart';
@@ -76,12 +77,17 @@ class _MapViewWidgetState extends State<MapViewWidget> {
     } catch (e) {
       safeSetState(() {
         _model.isLoading = false;
-        _model.errorMessage = 'Failed to load cameras: $e';
+        _model.errorMessage = context.tr(
+          'map.failed_load_cameras',
+          params: {'error': '$e'},
+        );
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error loading cameras: $e'),
+            content: Text(
+              context.tr('map.error_loading_cameras', params: {'error': '$e'}),
+            ),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 5),
           ),
@@ -135,7 +141,7 @@ class _MapViewWidgetState extends State<MapViewWidget> {
             ),
             const SizedBox(height: 20),
             Text(
-              'Loading cameras...',
+              context.tr('map.loading'),
               style: TextStyle(
                 color: const Color(0xFF111827),
                 fontSize: AppTextStyles.tableHeader,
@@ -144,7 +150,7 @@ class _MapViewWidgetState extends State<MapViewWidget> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Please wait',
+              context.tr('map.please_wait'),
               style: TextStyle(
                 color: const Color(0xFF6B7280),
                 fontSize: AppTextStyles.labelSmall,
@@ -169,7 +175,7 @@ class _MapViewWidgetState extends State<MapViewWidget> {
             ),
             const SizedBox(height: 20),
             Text(
-              'Error Loading Map',
+              context.tr('map.error_loading_map'),
               style: TextStyle(
                 color: const Color(0xFF111827),
                 fontSize: AppTextStyles.sectionTitle,
@@ -193,7 +199,7 @@ class _MapViewWidgetState extends State<MapViewWidget> {
             ElevatedButton.icon(
               onPressed: _loadCameras,
               icon: const Icon(Icons.refresh, size: 20),
-              label: Text('Retry',
+              label: Text(context.tr('common.retry'),
                   style: TextStyle(
                       fontSize: AppTextStyles.labelNormal,
                       fontWeight: FontWeight.w600)),
@@ -218,7 +224,7 @@ class _MapViewWidgetState extends State<MapViewWidget> {
             ),
             const SizedBox(height: 20),
             Text(
-              'No Cameras Found',
+              context.tr('map.no_cameras'),
               style: TextStyle(
                 color: const Color(0xFF111827),
                 fontSize: AppTextStyles.sectionTitle,
@@ -229,7 +235,7 @@ class _MapViewWidgetState extends State<MapViewWidget> {
             ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 400),
               child: Text(
-                'There are no cameras configured yet. Add cameras to see them on the map.',
+                context.tr('map.no_cameras_desc'),
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: const Color(0xFF6B7280),
@@ -242,7 +248,7 @@ class _MapViewWidgetState extends State<MapViewWidget> {
             ElevatedButton.icon(
               onPressed: _loadCameras,
               icon: const Icon(Icons.refresh, size: 20),
-              label: Text('Refresh',
+              label: Text(context.tr('common.refresh'),
                   style: TextStyle(
                       fontSize: AppTextStyles.labelNormal,
                       fontWeight: FontWeight.w600)),

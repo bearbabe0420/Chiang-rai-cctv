@@ -1,4 +1,5 @@
 import '/data/services/index.dart';
+import '/core/i18n/i18n.dart';
 import '/presentation/widgets/nav/views/nav_bar_main_widget.dart';
 import '/utils/flutter_flow/theme.dart';
 import '/utils/flutter_flow/util.dart';
@@ -248,7 +249,7 @@ class _ListPlatePageWidgetState extends State<ListPlatePageWidget> {
               children: [
                 // Title
                 Text(
-                  'Search License Plate',
+                  context.tr('plate.title'),
                   style: FlutterFlowTheme.of(context).headlineLarge.override(
                         fontFamily:
                             FlutterFlowTheme.of(context).headlineLargeFamily,
@@ -306,7 +307,12 @@ class _ListPlatePageWidgetState extends State<ListPlatePageWidget> {
   TableRow _buildTableHeader(BuildContext context) {
     return TableRow(
       decoration: BoxDecoration(color: FlutterFlowTheme.of(context).primary),
-      children: ['Full License Plate', 'Camera Name', 'Timestamp', 'Image']
+      children: [
+        context.tr('plate.columns.full_plate'),
+        context.tr('plate.columns.camera_name'),
+        context.tr('plate.columns.timestamp'),
+        context.tr('plate.columns.image'),
+      ]
           .map(
             (col) => TableCell(
               verticalAlignment: TableCellVerticalAlignment.middle,
@@ -489,8 +495,14 @@ class _MainCard extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Page ${model.currentPage} of ${model.totalPages}  '
-                        '(Total ${model.totalItems} items)',
+                        context.tr(
+                          'plate.page_summary',
+                          params: {
+                            'page': '${model.currentPage}',
+                            'totalPages': '${model.totalPages}',
+                            'totalItems': '${model.totalItems}',
+                          },
+                        ),
                         style: const TextStyle(
                           color: Color(0xFF6B7280),
                           fontSize: AppTextStyles.labelSmall,
@@ -536,7 +548,7 @@ class _SearchBar extends StatelessWidget {
         focusNode: focusNode,
         onChanged: onChanged,
         decoration: InputDecoration(
-          hintText: 'Search license plate, camera...',
+          hintText: context.tr('plate.search_hint'),
           hintStyle: const TextStyle(
               color: Color(0xFF9CA3AF), fontSize: AppTextStyles.labelNormal),
           prefixIcon:
@@ -591,7 +603,7 @@ class _TotalBadge extends StatelessWidget {
               size: 15, color: FlutterFlowTheme.of(context).primary),
           const SizedBox(width: 6),
           Text(
-            'Total $total items',
+            context.tr('plate.total_items', params: {'total': '$total'}),
             style: TextStyle(
               color: FlutterFlowTheme.of(context).primary,
               fontWeight: FontWeight.w600,
@@ -619,7 +631,7 @@ class _EmptyState extends StatelessWidget {
             Icon(Icons.no_crash, size: 48, color: Colors.grey.shade400),
             const SizedBox(height: 12),
             Text(
-              'No license plate data found',
+              context.tr('plate.empty'),
               style: TextStyle(
                   color: Colors.grey.shade500,
                   fontSize: AppTextStyles.labelNormal),
@@ -956,8 +968,8 @@ class _ImageViewerDialog extends StatelessWidget {
                 TextButton.icon(
                   onPressed: () => Navigator.of(context).pop(),
                   icon: const Icon(Icons.close, color: Colors.white70),
-                  label: const Text('close',
-                      style: TextStyle(color: Colors.white70)),
+                  label: Text(context.tr('common.close'),
+                      style: const TextStyle(color: Colors.white70)),
                 ),
               ],
             ),

@@ -1,4 +1,5 @@
 import '/utils/flutter_flow/icon_button.dart';
+import '/core/i18n/i18n.dart';
 import '/utils/flutter_flow/theme.dart';
 import '/utils/flutter_flow/util.dart';
 import '/utils/flutter_flow/widgets.dart';
@@ -153,7 +154,7 @@ Widget build(BuildContext context) {
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          isOnline ? 'Online' : 'Offline',
+                          isOnline ? context.tr('marker_popup.online') : context.tr('marker_popup.offline'),
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: AppTextStyles.tableStatus,
@@ -181,14 +182,14 @@ Widget build(BuildContext context) {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
 
-                    _infoCard("LatLong", latLong),
-                    _infoCard("Address", address),
+                    _infoCard(context.tr('camera_form.latlong_label'), latLong),
+                    _infoCard(context.tr('camera_form.address_label'), address),
 
                     if (rtspUrl.isNotEmpty)
-                      _infoCard("RTSP URL", rtspUrl),
+                      _infoCard(context.tr('camera_form.rtsp_label'), rtspUrl),
 
                     const SizedBox(height: 4),
-                    _sectionLabel("Categories"),
+                    _sectionLabel(context.tr('camera_list.columns.category')),
                     const SizedBox(height: 8),
                     if (cats != null && cats is List && cats.isNotEmpty)
                       _categoryChips(cats)
@@ -210,8 +211,8 @@ Widget build(BuildContext context) {
                           ),
                           elevation: 0,
                         ),
-                        child: const Text(
-                          "Close",
+                        child: Text(
+                          context.tr('common.close'),
                           style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w700,
