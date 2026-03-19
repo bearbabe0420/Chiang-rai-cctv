@@ -1,20 +1,25 @@
 package com.backendcam.backendcam.service.licenseplate;
 
-import com.backendcam.backendcam.model.entity.LicensePlate;
-import com.backendcam.backendcam.repository.LicensePlateRepository;
-import lombok.RequiredArgsConstructor;
-import me.xdrop.fuzzywuzzy.FuzzySearch;
-import org.springframework.stereotype.Service;
-
+import java.time.Instant;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
+import org.springframework.stereotype.Service;
+
+import com.backendcam.backendcam.model.dto.licenseplate.LicensePlateDTO;
 import com.backendcam.backendcam.model.entity.Camera;
+import com.backendcam.backendcam.model.entity.LicensePlate;
 import com.backendcam.backendcam.repository.CameraRepository;
+import com.backendcam.backendcam.repository.LicensePlateRepository;
+import com.google.cloud.Timestamp;
+
+import lombok.RequiredArgsConstructor;
+import me.xdrop.fuzzywuzzy.FuzzySearch;
 
 @Service
 @RequiredArgsConstructor
@@ -31,11 +36,14 @@ public class LicensePlateService {
      *
      * Strategy:
      * 1. Pick the most specific Firestore filter available (exact field filters).
-     *    Priority: fullPlate (via query exact) > text > number > province > cameraId > timestamp range > all.
-     * 2. Post-filter in Java for any remaining params that weren't used as the Firestore filter.
-     * 3. If `query` provided and no exact fullPlate match, fall back to fuzzy on fullPlate.
+     * Priority: fullPlate (via query exact) > text > number > province > cameraId >
+     * timestamp range > all.
+     * 2. Post-filter in Java for any remaining params that weren't used as the
+     * Firestore filter.
+     * 3. If `query` provided and no exact fullPlate match, fall back to fuzzy on
+     * fullPlate.
      */
-    public List<LicensePlate> search(
+    public List<LicensePlateDTO> search(
             String fullPlate,
             String cameraId,
             String text,
@@ -76,7 +84,7 @@ public class LicensePlateService {
             if (cameraId != null && !cameraId.isBlank()) {
                 final String cam = cameraId;
                 results = results.stream()
-                        .filter(p -> cam.equals(p.getCameraId()))
+                        .filter(p -> cam.equals(p.getCamera()))
                         .collect(Collectors.toList());
             }
             if (text != null && !text.isBlank() && fullPlate == null) {
@@ -98,11 +106,18 @@ public class LicensePlateService {
                         .collect(Collectors.toList());
             }
             if (start != null && end != null) {
+                Instant startInstant = Instant.parse(start); // expects ISO-8601
+                Instant endInstant = Instant.parse(end);
+                Timestamp tsStart = Timestamp.ofTimeSecondsAndNanos(startInstant.getEpochSecond(),
+                        startInstant.getNano());
+                Timestamp tsEnd = Timestamp.ofTimeSecondsAndNanos(endInstant.getEpochSecond(), endInstant.getNano());
+
                 results = results.stream()
                         .filter(p -> p.getTimestamp() != null
-                                && p.getTimestamp().compareTo(start) >= 0
-                                && p.getTimestamp().compareTo(end) <= 0)
+                                && p.getTimestamp().compareTo(tsStart) >= 0
+                                && p.getTimestamp().compareTo(tsEnd) <= 0)
                         .collect(Collectors.toList());
+
             }
 
             // --- Step 3: Fuzzy scoring if needed ---
@@ -110,80 +125,79 @@ public class LicensePlateService {
                 String normalizedQuery = normalize(fullPlate);
                 results = results.stream()
                         .filter(p -> p.getLicensePlate() != null && p.getLicensePlate().getFullPlate() != null)
-                        .filter(p -> fuzzyScore(normalizedQuery, normalize(p.getLicensePlate().getFullPlate())) >= FUZZY_THRESHOLD)
+                        .filter(p -> fuzzyScore(normalizedQuery,
+                                normalize(p.getLicensePlate().getFullPlate())) >= FUZZY_THRESHOLD)
                         .sorted(Comparator
                                 .comparingInt((LicensePlate p) ->
-
-                                        fuzzyScore(normalizedQuery, normalize(p.getLicensePlate().getFullPlate())))
+                                fuzzyScore(normalizedQuery, normalize(p.getLicensePlate().getFullPlate())))
                                 .reversed()
-                                .thenComparing(LicensePlate::getTimestamp, Comparator.nullsLast(Comparator.reverseOrder())))
+                                .thenComparing(LicensePlate::getTimestamp,
+                                        Comparator.nullsLast(Comparator.reverseOrder())))
                         .limit(MAX_RESULTS)
                         .collect(Collectors.toList());
             } else {
                 results = results.stream()
-                        .sorted(Comparator.comparing(LicensePlate::getTimestamp, Comparator.nullsLast(Comparator.reverseOrder())))
+                        .sorted(Comparator.comparing(LicensePlate::getTimestamp,
+                                Comparator.nullsLast(Comparator.reverseOrder())))
                         .limit(MAX_RESULTS)
                         .collect(Collectors.toList());
             }
 
             // --- Step 4: Populate camera documents based on cameraId ---
-            populateCameras(results);
+        
 
-            return results;
+            return populateCameras(results);
         } catch (Exception e) {
             throw new RuntimeException("Failed to search license plates", e);
         }
     }
 
-    /**
-     * Populate each LicensePlate's `camera` field using its `cameraId` in a batch-optimized way.
-     */
-    private void populateCameras(List<LicensePlate> plates) throws ExecutionException, InterruptedException {
-        // Collect distinct non-null camera IDs
-        List<String> ids = plates.stream()
-                .map(LicensePlate::getCameraId)
-                .filter(Objects::nonNull)
-                .distinct()
-                .collect(Collectors.toList());
+   private List<LicensePlateDTO> populateCameras(List<LicensePlate> plates) throws ExecutionException, InterruptedException {
+    List<String> ids = plates.stream()
+            .map(LicensePlate::getCamera)
+            .filter(Objects::nonNull)
+            .distinct()
+            .collect(Collectors.toList());
 
-        if (ids.isEmpty()) {
-            return;
-        }
-
-        Map<String, Camera> cache = ids.stream()
-                .map(id -> {
-                    try {
-                        return cameraRepository.getCameraById(id)
-                                .map(cam -> Map.entry(id, cam))
-                                .orElse(null);
-                    } catch (Exception e) {
-                        return null; // ignore individual failures
-                    }
-                })
-                .filter(Objects::nonNull)
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
-        // Assign a trimmed camera object (id, name, latLong, address, status only) back to each plate
-        plates.forEach(p -> {
-            String camId = p.getCameraId();
-            if (camId != null) {
-                Camera full = cache.get(camId);
-                if (full != null) {
-                    Camera trimmed = new Camera();
-                    trimmed.setId(full.getId());
-                    trimmed.setName(full.getName());
-                    trimmed.setLatLong(full.getLatLong());
-                    trimmed.setAddress(full.getAddress());
-                    trimmed.setStatus(full.getStatus());
-                    // rtspUrl, categories, lastSeen are intentionally omitted
-                    p.setCamera(trimmed);
-                }
-            }
-        });
+    Map<String, Camera> cache = new HashMap<>();
+    for (String id : ids) {
+        try {
+            cameraRepository.getCameraById(id).ifPresent(cam -> cache.put(id, cam));
+        } catch (Exception ignored) {}
     }
 
+    return plates.stream().map(p -> {
+        LicensePlateDTO dto = new LicensePlateDTO();
+        dto.setTimestamp(p.getTimestamp());
+        dto.setImageUrl(p.getImageUrl());
+
+        // Map licensePlate body
+        if (p.getLicensePlate() != null) {
+            dto.setLicensePlate(new LicensePlateDTO.LicensePlateBody(
+                p.getLicensePlate().getFullPlate(),
+                p.getLicensePlate().getText(),
+                p.getLicensePlate().getNumber(),
+                p.getLicensePlate().getProvince()
+            ));
+        }
+
+        // Map camera
+        String camId = p.getCamera();
+        if (camId != null) {
+            Camera cam = cache.get(camId);
+            LicensePlateDTO.CameraBody camBody = new LicensePlateDTO.CameraBody();
+            camBody.setCameraId(camId);
+            camBody.setCameraName(cam != null ? cam.getName() : null);
+            dto.setCamera(camBody);
+        }
+
+        return dto;
+    }).collect(Collectors.toList());
+}
+
     private String normalize(String input) {
-        if (input == null) return "";
+        if (input == null)
+            return "";
         return input.toUpperCase().replaceAll("[\\s\\-.]", "");
     }
 

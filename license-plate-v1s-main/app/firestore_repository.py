@@ -45,8 +45,7 @@ class FirestoreRepository:
         {
             "timestamp": Firestore.Timestamp,
             "imageUrl": str,
-            "cameraName": str,
-            "cameraId": str,
+            "camera": str,
             "kafka_timestamp": Firestore.Timestamp (optional),
             "licensePlate": {
                 "fullPlate": str,
@@ -60,8 +59,8 @@ class FirestoreRepository:
             # Extract fields
             timestamp_str = data.get("timestamp", "")
             image_url = data.get("imageUrl", "")
-            camera_name = data.get("cameraName", "")
-            camera_id = data.get("cameraId", "")
+            #camera_name = data.get("cameraName", "")
+            camera = data.get("cameraId", "")
             kafka_timestamp_str = data.get("kafka_timestamp", "")
             license_plate = data.get("licensePlate", {})
             
@@ -72,8 +71,7 @@ class FirestoreRepository:
             firestore_doc = {
                 "timestamp": parsed_timestamp,
                 "imageUrl": image_url,
-                "cameraName": camera_name,
-                "cameraId": camera_id,
+                "camera": camera,
                 "licensePlate": license_plate
             }
             
@@ -85,12 +83,11 @@ class FirestoreRepository:
             # Use document ID in format YYYYMMDD_HHMMSS (same as accident)
             # Extract from ISO timestamp: "2026-03-05T00:37:40+07:00" -> "20260305_003740"
             dt = parsed_timestamp
-            doc_id = dt.strftime("%Y%m%d_%H%M%S")
             
             # Save to Firestore
-            self.db.collection("licensePlates").document(doc_id).set(firestore_doc)
+            self.db.collection("licensePlates").add(firestore_doc)
             
-            logger.info(f"✅ Saved to Firebase licensePlates/{doc_id}: {license_plate.get('fullPlate', 'N/A')} | {license_plate.get('province', 'N/A')}")
+            logger.info(f"✅ Saved to Firebase licensePlates: {license_plate.get('fullPlate', 'N/A')} | {license_plate.get('province', 'N/A')}")
             
         except Exception as e:
             logger.error(f"❌ Failed to save license plate to Firestore: {e}", exc_info=True)
