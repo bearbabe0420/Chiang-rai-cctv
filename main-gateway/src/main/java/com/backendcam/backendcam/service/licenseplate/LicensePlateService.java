@@ -168,7 +168,9 @@ public class LicensePlateService {
 
     return plates.stream().map(p -> {
         LicensePlateDTO dto = new LicensePlateDTO();
-        dto.setTimestamp(p.getTimestamp());
+      dto.setTimestamp(p.getTimestamp() != null 
+    ? p.getTimestamp().toDate().toInstant().toString() 
+    : null);
         dto.setImageUrl(p.getImageUrl());
 
         // Map licensePlate body

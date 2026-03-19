@@ -1,7 +1,5 @@
 package com.backendcam.backendcam.model.dto.licenseplate;
 
-import com.google.cloud.Timestamp;
-
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -12,7 +10,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class LicensePlateDTO {
-    private Timestamp timestamp;
+    private String  timestamp;
     private String imageUrl;
 
     private LicensePlateBody licensePlate;
