@@ -18,7 +18,7 @@ class LicensePlateModel {
     return LicensePlateModel(
       timestamp: json['timestamp'] as String?,
       cameraName: (json['camera'] as Map<String, dynamic>?)?['cameraName'] as String?,
-      cameraId: json['cameraId'] as String?,
+      cameraId: (json['camera'] as Map<String, dynamic>?)?['cameraId'] as String?,
       imageUrl: json['imageUrl'] as String?,
       licensePlate: json['licensePlate'] != null
           ? LicensePlateDetail.fromJson(
@@ -31,12 +31,13 @@ class LicensePlateModel {
     return {
       if (timestamp != null) 'timestamp': timestamp,
       //if (cameraName != null) 'cameraName': cameraName,
-      if (cameraId != null) 'cameraId': cameraId,
+      //if (cameraId != null) 'cameraId': cameraId,
       if (imageUrl != null) 'imageUrl': imageUrl,
       if (licensePlate != null) 'licensePlate': licensePlate?.toJson(),
-      if (cameraName != null)
+      if (cameraName != null || cameraId != null)
       'camera': {
         'cameraName': cameraName,
+        'cameraId': cameraId,
       },
     };
   }

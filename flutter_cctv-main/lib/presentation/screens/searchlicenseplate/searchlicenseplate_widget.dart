@@ -2,6 +2,7 @@ import '/data/services/index.dart';
 import '/presentation/widgets/nav/views/nav_bar_main_widget.dart';
 import '/utils/flutter_flow/theme.dart';
 import '/utils/flutter_flow/util.dart';
+import 'dart:convert';
 import 'package:easy_debounce/easy_debounce.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -344,7 +345,7 @@ class _ListPlatePageWidgetState extends State<ListPlatePageWidget> {
       final plate = item['licensePlate'] as Map<String, dynamic>?;
       final fullPlate = plate?['fullPlate'] as String? ?? '-';
       final province = plate?['province'] as String? ?? '';
-      final cameraName = item['cameraName'] as String? ?? '-';
+      final cameraName = (item['camera'] as Map<String, dynamic>?)?['cameraName'] as String? ?? '-';
       final timestamp = item['timestamp'] as String? ?? '-';
       final imageUrl = item['imageUrl'] as String? ?? '';
 
