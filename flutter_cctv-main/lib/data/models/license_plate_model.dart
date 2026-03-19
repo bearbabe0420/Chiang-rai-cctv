@@ -30,10 +30,14 @@ class LicensePlateModel {
   Map<String, dynamic> toJson() {
     return {
       if (timestamp != null) 'timestamp': timestamp,
-      if (cameraName != null) 'cameraName': cameraName,
+      //if (cameraName != null) 'cameraName': cameraName,
       if (cameraId != null) 'cameraId': cameraId,
       if (imageUrl != null) 'imageUrl': imageUrl,
       if (licensePlate != null) 'licensePlate': licensePlate?.toJson(),
+      if (cameraName != null)
+      'camera': {
+        'name': cameraName,
+      },
     };
   }
 
