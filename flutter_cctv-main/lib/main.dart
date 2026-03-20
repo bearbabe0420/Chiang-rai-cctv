@@ -1,6 +1,7 @@
 import 'package:provider/provider.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_i18n/flutter_i18n.dart';
 
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
@@ -43,6 +44,14 @@ class MyAppScrollBehavior extends MaterialScrollBehavior {
 
 class _MyAppState extends State<MyApp> {
   ThemeMode _themeMode = ThemeMode.system;
+  final FlutterI18nDelegate _flutterI18nDelegate = FlutterI18nDelegate(
+    translationLoader: FileTranslationLoader(
+      basePath: 'assets/i18n',
+      fallbackFile: 'th',
+      useCountryCode: false,
+      forcedLocale: const Locale('th'),
+    ),
+  );
 
   late AppStateNotifier _appStateNotifier;
   late GoRouter _router;
@@ -79,14 +88,16 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
-      title: 'Central Command',
+      title: 'Central Eye',
       scrollBehavior: MyAppScrollBehavior(),
       localizationsDelegates: [
+        _flutterI18nDelegate,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      supportedLocales: const [Locale('en', '')],
+      supportedLocales: const [Locale('th')],
+      locale: const Locale('th'),
       theme: ThemeData(
         brightness: Brightness.light,
         useMaterial3: false,

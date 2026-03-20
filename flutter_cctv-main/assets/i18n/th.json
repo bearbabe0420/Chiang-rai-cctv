@@ -1,0 +1,170 @@
+{
+  "app": {
+    "title": "Central Eye"
+  },
+  "nav": {
+    "brand": "Central Eye",
+    "list_camera": "รายการกล้อง",
+    "search_plate": "ค้นหาป้ายทะเบียน",
+    "collection": "คอลเลกชัน",
+    "command_view": "มุมมองคำสั่ง",
+    "map_view": "แผนที่",
+    "administrator": "ผู้ดูแลระบบ",
+    "logout": "ออกจากระบบ"
+  },
+  "common": {
+    "close": "ปิด",
+    "retry": "ลองใหม่",
+    "refresh": "รีเฟรช",
+    "cancel": "ยกเลิก",
+    "delete": "ลบ",
+    "search": "ค้นหา"
+  },
+  "login": {
+    "welcome_back": "ยินดีต้อนรับกลับ",
+    "subtitle": "กรอกข้อมูลด้านล่างเพื่อเข้าสู่ระบบ",
+    "username": "ชื่อผู้ใช้",
+    "password": "รหัสผ่าน",
+    "login": "เข้าสู่ระบบ",
+    "loading": "กำลังโหลด...",
+    "fill_required": "กรุณากรอกชื่อผู้ใช้และรหัสผ่าน",
+    "failed": "เข้าสู่ระบบไม่สำเร็จ โปรดตรวจสอบข้อมูลอีกครั้ง"
+  },
+  "camera_list": {
+    "title": "รายการกล้อง",
+    "total_cameras": "กล้องทั้งหมด",
+    "online": "ออนไลน์",
+    "offline": "ออฟไลน์",
+    "search_hint": "ค้นหากล้องด้วยชื่อ...",
+    "add_camera": "เพิ่มกล้อง",
+    "empty": "ไม่พบข้อมูลกล้อง",
+    "page_summary": "หน้า {page} จาก {totalPages} (ทั้งหมด {totalItems} รายการ)",
+    "confirm_delete_title": "ยืนยันการลบ",
+    "confirm_delete_message": "คุณแน่ใจหรือไม่ว่าต้องการลบ \"{name}\"?",
+    "deleted_success": "ลบ \"{name}\" สำเร็จ",
+    "deleted_failed": "ลบไม่สำเร็จ: {statusCode}",
+    "columns": {
+      "name": "ชื่อ",
+      "latlong": "พิกัด",
+      "address": "ที่อยู่",
+      "status": "สถานะ",
+      "category": "หมวดหมู่",
+      "action": "การจัดการ"
+    },
+    "tooltip": {
+      "view_details": "ดูรายละเอียด",
+      "edit": "แก้ไข",
+      "delete": "ลบ"
+    }
+  },
+  "collection": {
+    "search_hint": "ค้นหากล้อง...",
+    "search_cleared": "ล้างการค้นหาแล้ว แสดงกล้องทั้งหมด",
+    "cameras_count": "กล้อง ({count})",
+    "all_cameras_in_category": "กล้องทั้งหมดอยู่ในหมวดหมู่นี้แล้ว",
+    "tooltip": {
+      "collapse": "ย่อ",
+      "expand": "ขยาย",
+      "edit_name": "แก้ไขชื่อ"
+    },
+    "edit": {
+      "title": "แก้ไขหมวดหมู่",
+      "name_label": "ชื่อหมวดหมู่",
+      "name_required": "กรุณากรอกชื่อ",
+      "updated_success": "อัปเดตหมวดหมู่สำเร็จ",
+      "update_failed": "อัปเดตหมวดหมู่ไม่สำเร็จ",
+      "save": "บันทึก"
+    },
+    "delete": {
+      "title": "ลบหมวดหมู่",
+      "confirm": "ลบ \"{name}\"?",
+      "undo_warning": "การกระทำนี้ไม่สามารถย้อนกลับได้",
+      "deleted_success": "ลบหมวดหมู่สำเร็จ",
+      "in_use_title": "หมวดหมู่กำลังถูกใช้งาน",
+      "in_use_message": "\"{name}\" ยังถูกกำหนดให้กับกล้องอย่างน้อยหนึ่งตัว",
+      "force_delete_message": "การลบแบบบังคับจะเอาหมวดหมู่นี้ออกจากกล้องทั้งหมดก่อน แล้วจึงลบหมวดหมู่",
+      "force_delete": "ลบแบบบังคับ",
+      "force_deleted_success": "ลบหมวดหมู่แบบบังคับสำเร็จ",
+      "force_delete_failed": "ลบแบบบังคับไม่สำเร็จ",
+      "delete_failed": "ลบไม่สำเร็จ ({statusCode})"
+    }
+  },
+  "camera_dashboard": {
+    "title": "รายการกล้อง",
+    "total_cameras": "กล้องทั้งหมด",
+    "online_cameras": "กล้องออนไลน์",
+    "offline_cameras": "กล้องออฟไลน์",
+    "search_hint": "ค้นหากล้อง...",
+    "import_files": "นำเข้าไฟล์"
+  },
+  "legacy_plate_table": {
+    "empty": "ไม่พบข้อมูล",
+    "search_hint": "ค้นหา...",
+    "columns": {
+      "license_plate": "ป้ายทะเบียน",
+      "camera_id": "รหัสกล้อง",
+      "timestamp": "เวลา",
+      "picture": "รูปภาพ"
+    }
+  },
+  "camera_form": {
+    "name_label": "ชื่อกล้อง",
+    "name_hint": "เช่น C8 ต.สันทราย หมู่ 10",
+    "latlong_label": "พิกัด",
+    "address_label": "ที่อยู่",
+    "rtsp_label": "RTSP URL",
+    "required": "จำเป็นต้องกรอก",
+    "latlong_format": "รูปแบบต้องเป็น lat,long",
+    "must_be_numbers": "ต้องเป็นตัวเลข",
+    "rtsp_prefix_invalid": "ต้องขึ้นต้นด้วย rtsp://, http:// หรือ https://",
+    "add_success": "เพิ่มกล้อง \"{name}\" สำเร็จ",
+    "create_failed": "สร้างกล้องไม่สำเร็จ ({statusCode})",
+    "error_occurred": "เกิดข้อผิดพลาด: {error}",
+    "save_success": "บันทึกสำเร็จ",
+    "save_failed": "บันทึกไม่สำเร็จ: {statusCode}"
+  },
+  "preview": {
+    "no_camera_id": "ไม่พบรหัสกล้อง",
+    "live_preview": "ตัวอย่างภาพสด",
+    "live": "สด"
+  },
+  "command": {
+    "stream_unavailable": "สตรีมไม่พร้อมใช้งาน"
+  },
+  "map": {
+    "loading": "กำลังโหลดกล้อง...",
+    "please_wait": "โปรดรอสักครู่",
+    "error_loading_map": "เกิดข้อผิดพลาดในการโหลดแผนที่",
+    "error_loading_cameras": "เกิดข้อผิดพลาดในการโหลดกล้อง: {error}",
+    "failed_load_cameras": "ไม่สามารถโหลดกล้องได้: {error}",
+    "no_cameras": "ไม่พบกล้อง",
+    "no_cameras_desc": "ยังไม่มีกล้องที่ตั้งค่าไว้ เพิ่มกล้องเพื่อแสดงบนแผนที่"
+  },
+  "plate": {
+    "title": "ค้นหาป้ายทะเบียน",
+    "search_hint": "ค้นหาป้ายทะเบียนหรือกล้อง...",
+    "total_items": "ทั้งหมด {total} รายการ",
+    "empty": "ไม่พบข้อมูลป้ายทะเบียน",
+    "page_summary": "หน้า {page} จาก {totalPages} (ทั้งหมด {totalItems} รายการ)",
+    "columns": {
+      "full_plate": "ป้ายทะเบียน",
+      "camera_name": "ชื่อกล้อง",
+      "timestamp": "เวลา",
+      "image": "รูปภาพ"
+    }
+  },
+  "marker_popup": {
+    "camera_fallback": "กล้อง",
+    "camera_details": "รายละเอียดกล้อง",
+    "location": "ตำแหน่ง",
+    "coordinates": "พิกัด",
+    "stream_url": "ลิงก์สตรีม",
+    "online": "ออนไลน์",
+    "offline": "ออฟไลน์",
+    "view_live_feed": "ดูภาพสด",
+    "camera_offline": "กล้องออฟไลน์",
+    "copied": "คัดลอกแล้ว",
+    "offline_hint": "กล้องนี้ออฟไลน์อยู่ในขณะนี้และไม่สามารถรับชมได้",
+    "last_seen": "พบล่าสุด {timeAgo}"
+  }
+}
