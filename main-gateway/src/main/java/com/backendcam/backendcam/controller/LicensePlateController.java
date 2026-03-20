@@ -1,12 +1,17 @@
 package com.backendcam.backendcam.controller;
 
-import com.backendcam.backendcam.model.entity.LicensePlate;
-import com.backendcam.backendcam.service.licenseplate.LicensePlateService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.backendcam.backendcam.model.dto.licenseplate.LicensePlateDTO;
+import com.backendcam.backendcam.service.licenseplate.LicensePlateService;
+
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequiredArgsConstructor
@@ -30,7 +35,7 @@ public class LicensePlateController {
      * If nothing is provided → returns all records.
      */
     @GetMapping("/search")
-    public ResponseEntity<List<LicensePlate>> search(
+    public ResponseEntity<List<LicensePlateDTO>> search(
             @RequestParam(required = false) String fullPlate,
             @RequestParam(required = false) String cameraId,
             @RequestParam(required = false) String text,
@@ -39,7 +44,7 @@ public class LicensePlateController {
             @RequestParam(required = false) String start,
             @RequestParam(required = false) String end) {
 
-        List<LicensePlate> results = licensePlateService.search(
+        List<LicensePlateDTO> results = licensePlateService.search(
                 fullPlate, cameraId, text, number, province, start, end);
 
         if (results.isEmpty()) return ResponseEntity.notFound().build();
