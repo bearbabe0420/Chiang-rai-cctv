@@ -8,6 +8,7 @@ from typing import Optional, Dict, List
 import time
 import logging
 from PIL import Image, ImageDraw, ImageFont
+from firebase_admin import storage
 
 # Import Gemini OCR
 try:
@@ -309,8 +310,8 @@ class LicensePlateDetector:
             repo = FirestoreRepository()
             docs = self._map_each_plate_to_firestore_docs(output_data)
             for doc in docs:
-                repo.save_license_plate(doc)
-            logger.info(f"   🚀 Sent {len(docs)} license plate(s) to Firestore.")
+                 repo.save_license_plate(doc)
+     
         except Exception as e:
             logger.error(f"   ❌ Failed to send result to Firestore: {e}")
 
@@ -548,7 +549,7 @@ class LicensePlateDetector:
         
         # แปลงกลับเป็น OpenCV (RGB -> BGR)
         return cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
-    
+
     def batch_detect(
         self,
         image_paths: List[str],
@@ -617,16 +618,31 @@ class LicensePlateDetector:
         cameraId = output_data.get("cameraId")
         for det in output_data.get("detections", []):
             ocr = det.get("ocr", {})
+            full_plate = (ocr.get("full_plate", "") or "").strip()
+            text = (ocr.get("text", "") or "").strip()
+            number = (ocr.get("license_plate_number", "") or "").strip()
+            province = (ocr.get("province", "") or "").strip()
+
+            def _is_meaningful(value: str) -> bool:
+                if not value:
+                    return False
+                return value.upper() != "UNREADABLE"
+
+            # ถ้าทุก field ว่างหรือเป็น UNREADABLE ให้ข้าม ไม่บันทึกเข้า Firestore
+            if not any(_is_meaningful(v) for v in [full_plate, text, number, province]):
+                logger.info("   🔎 Skipping Firestore doc for detection with empty/unreadable plate.")
+                continue
+
             doc = {
                 "timestamp": timestamp,
                 "imageUrl": imageUrl,
                 "cameraName": cameraName,
                 "cameraId": cameraId,
                 "licensePlate": {
-                    "fullPlate": ocr.get("full_plate", ""),
-                    "text": ocr.get("text", ""),
-                    "number": ocr.get("license_plate_number", ""),
-                    "province": ocr.get("province", "")
+                    "fullPlate": full_plate,
+                    "text": text,
+                    "number": number,
+                    "province": province
                 }
             }
             docs.append(doc)
