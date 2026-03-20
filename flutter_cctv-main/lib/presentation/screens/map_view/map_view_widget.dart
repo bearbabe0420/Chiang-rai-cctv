@@ -66,6 +66,7 @@ class _MapViewWidgetState extends State<MapViewWidget> {
             'address': camera.address,
             'rtspUrl': camera.rtspUrl,
             'status': camera.status,
+        'lastSeen': camera.lastSeen,
             'categories': camera.categories,
           }).toList();
 

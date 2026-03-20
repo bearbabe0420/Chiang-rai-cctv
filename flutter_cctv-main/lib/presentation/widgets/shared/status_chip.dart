@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 
+import '/utils/time_ago_formatter.dart';
+
 /// A chip that displays camera online / offline status.
 ///
 /// Usage:
 /// ```dart
 /// StatusChip(status: 'online')
-/// StatusChip(status: 'offline')
+/// StatusChip(status: 'offline', lastSeen: DateTime.now())
 /// StatusChip(status: item['status'])
 /// ```
 class StatusChip extends StatelessWidget {
   final String status;
+  final DateTime? lastSeen;
 
   /// Font size of the label text (defaults to 12).
   final double fontSize;
@@ -20,6 +23,7 @@ class StatusChip extends StatelessWidget {
   const StatusChip({
     super.key,
     required this.status,
+    this.lastSeen,
     this.fontSize = 12,
     this.padding = const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
   });
@@ -28,6 +32,15 @@ class StatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final String text;
+    if (_isOnline) {
+      text = 'Online';
+    } else if (lastSeen != null) {
+      text = TimeAgoFormatter.format(lastSeen!);
+    } else {
+      text = 'Offline';
+    }
+
     return FittedBox(
       fit: BoxFit.scaleDown,
       alignment: Alignment.centerLeft,
@@ -55,7 +68,7 @@ class StatusChip extends StatelessWidget {
             ),
             const SizedBox(width: 4),
             Text(
-              _isOnline ? 'Online' : 'Offline',
+              text,
               style: TextStyle(
                 color: _isOnline
                     ? const Color(0xFF15803D) // green-700

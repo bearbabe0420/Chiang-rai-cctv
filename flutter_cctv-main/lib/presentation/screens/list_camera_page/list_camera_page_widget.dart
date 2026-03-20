@@ -327,6 +327,14 @@ class _ListCameraPageWidgetState extends State<ListCameraPageWidget> {
             final name = getJsonField(item, r'$.name')?.toString() ?? '-';
             final status =
                 getJsonField(item, r'$.status')?.toString() ?? 'unknown';
+            final lastSeenRaw = getJsonField(item, r'$.lastSeen');
+
+            DateTime? lastSeen;
+            if (lastSeenRaw is String) {
+              lastSeen = DateTime.tryParse(lastSeenRaw);
+            } else if (lastSeenRaw is int) {
+              lastSeen = DateTime.fromMillisecondsSinceEpoch(lastSeenRaw * 1000);
+            }
 
             return TableRow(
               decoration: BoxDecoration(
@@ -357,6 +365,7 @@ class _ListCameraPageWidgetState extends State<ListCameraPageWidget> {
                         horizontal: 12, vertical: 10),
                     child: StatusChip(
                       status: status,
+                      lastSeen: lastSeen,
                       fontSize: AppTextStyles.commandSmall,
                     ),
                   ),

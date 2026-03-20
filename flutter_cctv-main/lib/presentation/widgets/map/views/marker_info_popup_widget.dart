@@ -2,6 +2,7 @@ import '/utils/flutter_flow/icon_button.dart';
 import '/utils/flutter_flow/theme.dart';
 import '/utils/flutter_flow/util.dart';
 import '/utils/flutter_flow/widgets.dart';
+import '/utils/time_ago_formatter.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -65,6 +66,7 @@ class _MarkerInfoPopupWidgetState extends State<MarkerInfoPopupWidget> {
     final statusText = isOnline ? 'Online' : 'Offline';
     final cameraId = widget.cameraData?['id']?.toString() ?? '';
     final categories = widget.cameraData?['categories'] as List<dynamic>?;
+    final lastSeen = _parseLastSeen(widget.cameraData?['lastSeen']);
 
     return Align(
       alignment: AlignmentDirectional(0.0, 0.0),
@@ -443,13 +445,29 @@ class _MarkerInfoPopupWidgetState extends State<MarkerInfoPopupWidget> {
                                     ),
                                     SizedBox(width: 8),
                                     Expanded(
-                                      child: Text(
-                                        'This camera is currently offline and unavailable for viewing',
-                                        style: TextStyle(
-                                          color: Color(0xFFDC2626),
-                                          fontSize: AppTextStyles.commandBody,
-                                          fontWeight: FontWeight.w500,
-                                        ),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'This camera is currently offline and unavailable for viewing',
+                                            style: TextStyle(
+                                              color: Color(0xFFDC2626),
+                                              fontSize: AppTextStyles.commandBody,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                          if (lastSeen != null) ...[
+                                            SizedBox(height: 4),
+                                            Text(
+                                              'Last seen ${TimeAgoFormatter.format(lastSeen)}',
+                                              style: TextStyle(
+                                                color: const Color(0xFFB91C1C),
+                                                fontSize: AppTextStyles.commandBody,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ],
+                                        ],
                                       ),
                                     ),
                                   ],
@@ -566,5 +584,22 @@ class _MarkerInfoPopupWidgetState extends State<MarkerInfoPopupWidget> {
         ],
       ),
     );
+  }
+
+  DateTime? _parseLastSeen(dynamic value) {
+    if (value == null) return null;
+    if (value is DateTime) return value;
+    if (value is String) return DateTime.tryParse(value);
+    if (value is int) {
+      final isMilliseconds = value > 1000000000000;
+      final epoch = isMilliseconds ? value : value * 1000;
+      return DateTime.fromMillisecondsSinceEpoch(epoch);
+    }
+    if (value is double) {
+      final isMilliseconds = value > 1000000000000;
+      final epoch = isMilliseconds ? value.toInt() : (value * 1000).toInt();
+      return DateTime.fromMillisecondsSinceEpoch(epoch);
+    }
+    return null;
   }
 }
