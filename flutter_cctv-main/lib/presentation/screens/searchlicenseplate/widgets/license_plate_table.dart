@@ -1,7 +1,7 @@
 // Automatic FlutterFlow imports
 import '/utils/flutter_flow/theme.dart';
 import '/utils/flutter_flow/util.dart';
-import '../index.dart'; // Imports other custom widgets
+import '../../../widgets/index.dart'; // Imports other custom widgets
 import 'package:flutter/material.dart';
 // Begin custom widget code
 // DO NOT REMOVE OR MODIFY THE CODE ABOVE!
