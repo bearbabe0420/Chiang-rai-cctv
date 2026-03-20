@@ -1,0 +1,1 @@
+//Some Hard Code Eng Still existed in the some pages , dont forget to recheck first.
