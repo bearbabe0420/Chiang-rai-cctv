@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '/core/i18n/i18n.dart';
 
 import '/utils/time_ago_formatter.dart';
 
@@ -34,11 +35,11 @@ class StatusChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final String text;
     if (_isOnline) {
-      text = 'Online';
+      text = context.tr('camera_list.online');
     } else if (lastSeen != null) {
       text = TimeAgoFormatter.format(lastSeen!);
     } else {
-      text = 'Offline';
+      text = context.tr('camera_list.offline');
     }
 
     return FittedBox(

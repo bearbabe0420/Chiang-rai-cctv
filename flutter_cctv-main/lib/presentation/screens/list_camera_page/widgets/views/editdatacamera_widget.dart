@@ -231,7 +231,7 @@ Widget build(BuildContext context) {
                                     .showSnackBar(
                                   SnackBar(
                                     content:
-                                        const Text('saved successfully'),
+                                        const Text('บันทึกสำเร็จ'),
                                     backgroundColor:
                                         const Color(0xFF16A34A),
                                     behavior:
@@ -247,7 +247,7 @@ Widget build(BuildContext context) {
                                     .showSnackBar(
                                   SnackBar(
                                     content: Text(
-                                        'Failed to save: ${response.statusCode}'),
+                                      'บันทึกไม่สำเร็จ: ${response.statusCode}'),
                                     backgroundColor:
                                         const Color(0xFFEF4444),
                                     behavior:

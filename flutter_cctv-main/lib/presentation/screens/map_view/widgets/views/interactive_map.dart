@@ -444,7 +444,7 @@ class _ClusterPickerSheet extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'showing cameras in this area',
+                        'กล้องในพื้นที่นี้',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: AppTextStyles.commandTitle,
@@ -452,7 +452,7 @@ class _ClusterPickerSheet extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        '${cameras.length} camera in this cluster',
+                        '${cameras.length} กล้องในกลุ่มนี้',
                         style: TextStyle(
                           color: Colors.white.withOpacity(0.5),
                           fontSize: AppTextStyles.commandSmall,
@@ -487,7 +487,7 @@ class _ClusterPickerSheet extends StatelessWidget {
                   height: 1, color: Color(0xFFEEEEEE), indent: 60),
               itemBuilder: (_, i) {
                 final doc      = cameras[i];
-                final name     = doc['name']?.toString() ?? 'Camera ${i + 1}';
+                final name     = doc['name']?.toString() ?? 'กล้อง ${i + 1}';
                 final address  = doc['address']?.toString() ?? '';
                 final isOnline =
                     doc['status']?.toString().toLowerCase() == 'online';
@@ -555,7 +555,7 @@ class _ClusterPickerSheet extends StatelessWidget {
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
-                            isOnline ? 'Online' : 'Offline',
+                            isOnline ? 'ออนไลน์' : 'ออฟไลน์',
                             style: TextStyle(
                               color: isOnline
                                   ? Colors.white

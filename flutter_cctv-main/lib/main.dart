@@ -2,6 +2,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_i18n/flutter_i18n.dart';
+import 'package:flutter_i18n/loaders/decoders/json_decode_strategy.dart';
 
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
@@ -50,6 +51,7 @@ class _MyAppState extends State<MyApp> {
       fallbackFile: 'th',
       useCountryCode: false,
       forcedLocale: const Locale('th'),
+      decodeStrategies: [JsonDecodeStrategy()],
     ),
   );
 

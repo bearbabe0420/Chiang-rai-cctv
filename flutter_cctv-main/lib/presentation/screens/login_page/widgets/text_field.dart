@@ -1,6 +1,7 @@
 import 'package:central_command/utils/app_text_styles.dart';
 import 'package:central_command/utils/flutter_flow/model.dart';
 import 'package:central_command/utils/flutter_flow/util.dart';
+import '/core/i18n/i18n.dart';
 
 import '/utils/flutter_flow/theme.dart';
 import 'package:flutter/material.dart';
@@ -28,7 +29,7 @@ class UsernameField extends StatelessWidget {
           textInputAction: TextInputAction.next,
           keyboardType: TextInputType.emailAddress,
           decoration: InputDecoration(
-            labelText: 'Username',
+            labelText: context.tr('login.username', fallback: 'ชื่อผู้ใช้'),
             labelStyle: FlutterFlowTheme.of(context).labelLarge.override(
                   font: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w500),
                   color: const Color(0xFF57636C),
@@ -106,7 +107,7 @@ class PasswordField extends StatelessWidget {
             }
           },
           decoration: InputDecoration(
-            labelText: 'Password',
+            labelText: context.tr('login.password', fallback: 'รหัสผ่าน'),
             labelStyle: FlutterFlowTheme.of(context).labelLarge.override(
                   font: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w500),
                   color: const Color(0xFF57636C),

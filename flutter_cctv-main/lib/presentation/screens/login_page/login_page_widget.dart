@@ -1,4 +1,5 @@
 import '/core/state/app_state.dart';
+import '/core/i18n/i18n.dart';
 import '/data/services/index.dart';
 import '/utils/flutter_flow/animations.dart';
 import '/utils/flutter_flow/util.dart';
@@ -91,7 +92,7 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
     final password = _model.passwordTextController.text;
 
     if (username.isEmpty || password.isEmpty) {
-      _showSnackBar(context, 'Please fill in Username and Password');
+      _showSnackBar(context, context.tr('login.fill_required'));
       return;
     }
 
@@ -111,7 +112,7 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
       context.goNamed(ListCameraPageWidget.routeName);
     } else {
       safeSetState(() => _model.isLoading = false);
-      _showSnackBar(context, 'Login failed. Please check your credentials.');
+      _showSnackBar(context, context.tr('login.failed'));
     }
   }
 

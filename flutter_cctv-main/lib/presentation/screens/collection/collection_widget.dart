@@ -1,5 +1,6 @@
 import '/data/services/index.dart';
 import '/presentation/widgets/nav_bar_main_widget.dart';
+import '/core/i18n/i18n.dart';
 import '/utils/flutter_flow_data_table.dart';
 import '/utils/flutter_flow_theme.dart';
 import '/utils/flutter_flow_util.dart';
@@ -119,10 +120,10 @@ class _CollectionWidgetState extends State<CollectionWidget> {
     _fetchCameras(page: 1, search: '');
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Row(children: [
-          Icon(Icons.refresh_rounded, color: Colors.white),
-          SizedBox(width: 8),
-          Text('Search cleared, showing all cameras'),
+        content: Row(children: [
+          const Icon(Icons.refresh_rounded, color: Colors.white),
+          const SizedBox(width: 8),
+          Text(context.tr('collection.search_cleared')),
         ]),
         duration: const Duration(milliseconds: 2000),
         backgroundColor: const Color(0xFF6C757D),
@@ -186,7 +187,7 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                   children: [
                     // Title
                     Text(
-                      'Category Management',
+                      context.tr('nav.collection'),
                       style: FlutterFlowTheme.of(context)
                           .headlineLarge
                           .override(
@@ -255,8 +256,14 @@ class _CollectionWidgetState extends State<CollectionWidget> {
                                       MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
-                                      'Page ${_model.currentPage} of ${_model.totalPages}  '
-                                      '(Total ${_model.totalCameras} items)',
+                                      context.tr(
+                                        'camera_list.page_summary',
+                                        params: {
+                                          'page': '${_model.currentPage}',
+                                          'totalPages': '${_model.totalPages}',
+                                          'totalItems': '${_model.totalCameras}',
+                                        },
+                                      ),
                                       style: const TextStyle(
                                           color: Color(0xFF6B7280),
                                           fontSize: 13),
@@ -309,10 +316,10 @@ class _CollectionWidgetState extends State<CollectionWidget> {
       controller: _model.paginatedDataTableController,
       data: _model.listOfCameras,
       columnsBuilder: (onSortChanged) => [
-        _headerCol(context, 'Name', ColumnSize.L),
-        _headerCol(context, 'Address', ColumnSize.L),
-        _headerCol(context, 'Status', ColumnSize.S),
-        _headerCol(context, 'Categories', ColumnSize.L),
+        _headerCol(context, context.tr('camera_list.columns.name'), ColumnSize.L),
+        _headerCol(context, context.tr('camera_list.columns.address'), ColumnSize.L),
+        _headerCol(context, context.tr('camera_list.columns.status'), ColumnSize.S),
+        _headerCol(context, context.tr('camera_list.columns.category'), ColumnSize.L),
       ],
       dataRowBuilder: (item, idx, selected, onSelectChanged) => DataRow(
         color: MaterialStateProperty.all(

@@ -1,5 +1,6 @@
 import 'package:central_command/utils/app_text_styles.dart';
 
+import '/core/i18n/i18n.dart';
 import '/utils/flutter_flow/theme.dart';
 import 'package:flutter/material.dart';
 
@@ -28,7 +29,7 @@ class PlateSearchBar extends StatelessWidget {
         focusNode: focusNode,
         onChanged: onChanged,
         decoration: InputDecoration(
-          hintText: 'Search license plate, camera...',
+          hintText: context.tr('plate.search_hint'),
           hintStyle: const TextStyle(
               color: Color(0xFF9CA3AF), fontSize: AppTextStyles.labelNormal),
           prefixIcon:
@@ -82,7 +83,7 @@ class PlateTotalBadge extends StatelessWidget {
               size: 15, color: FlutterFlowTheme.of(context).primary),
           const SizedBox(width: 6),
           Text(
-            'Total $total items',
+            context.tr('plate.total_items', params: {'total': '$total'}),
             style: TextStyle(
               color: FlutterFlowTheme.of(context).primary,
               fontWeight: FontWeight.w600,

@@ -107,7 +107,7 @@ class _PreviewOverlayWidgetState extends State<PreviewOverlayWidget> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Live Preview',
+                                'พรีวิวสด',
                                 style: TextStyle(
                                   color: Color.fromARGB(255, 0, 0, 0),
                                   fontSize: AppTextStyles.commandTitle,
@@ -121,7 +121,7 @@ class _PreviewOverlayWidgetState extends State<PreviewOverlayWidget> {
                                   _PulseDot(),
                                   SizedBox(width: 5),
                                   Text(
-                                    'Live',
+                                    'สด',
                                     style: TextStyle(
                                       color: Color(0xFF10B981),
                                       fontSize: AppTextStyles.commandSmall,
@@ -253,7 +253,7 @@ class _CameraCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 4),
                       const Text(
-                        'LIVE',
+                        'สด',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: AppTextStyles.commandSmall,
@@ -334,7 +334,7 @@ class _NoStreamPlaceholder extends StatelessWidget {
           Icon(Icons.videocam_off_rounded, color: Color(0xFF4B5563), size: 28),
           SizedBox(height: 6),
           Text(
-            'No Camera ID',
+            'ไม่พบรหัสกล้อง',
             style: TextStyle(
               color: Color(0xFF6B7280),
               fontSize: AppTextStyles.commandSmall,

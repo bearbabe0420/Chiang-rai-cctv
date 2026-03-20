@@ -1,5 +1,6 @@
 import '/data/services/index.dart';
 import '/presentation/widgets/nav/views/nav_bar_main_widget.dart';
+import '/core/i18n/i18n.dart';
 import '/utils/flutter_flow/theme.dart';
 import '/utils/flutter_flow/util.dart';
 import 'package:easy_debounce/easy_debounce.dart';
@@ -218,7 +219,7 @@ class _ListPlatePageWidgetState extends State<ListPlatePageWidget> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Search License Plate',
+                  context.tr('plate.title'),
                   style: FlutterFlowTheme.of(context).headlineLarge.override(
                         fontFamily: FlutterFlowTheme.of(context)
                             .headlineLargeFamily,
@@ -275,9 +276,15 @@ class _ListPlatePageWidgetState extends State<ListPlatePageWidget> {
   }
 
   TableRow _buildTableHeader(BuildContext context) {
+    final columns = [
+      context.tr('plate.columns.full_plate'),
+      context.tr('plate.columns.camera_name'),
+      context.tr('plate.columns.timestamp'),
+      context.tr('plate.columns.image'),
+    ];
     return TableRow(
       decoration: BoxDecoration(color: FlutterFlowTheme.of(context).primary),
-      children: ['Full License Plate', 'Camera Name', 'Timestamp', 'Image']
+      children: columns
           .map((col) => TableCell(
                 verticalAlignment: TableCellVerticalAlignment.middle,
                 child: Padding(

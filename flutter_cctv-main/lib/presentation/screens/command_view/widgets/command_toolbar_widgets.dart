@@ -1,5 +1,6 @@
 import 'package:central_command/utils/app_text_styles.dart';
 
+import '/core/i18n/i18n.dart';
 import '/utils/flutter_flow/theme.dart';
 import 'package:flutter/material.dart';
 
@@ -104,7 +105,9 @@ class GridToolbar extends StatelessWidget {
               CommandFloatingButton(
                 onTap: onToggleEdit,
                 icon: isEditMode ? Icons.check : Icons.edit,
-                label: isEditMode ? 'Done' : 'Edit',
+                label: isEditMode
+                    ? context.tr('common.close', fallback: 'เสร็จสิ้น')
+                    : context.tr('camera_list.tooltip.edit', fallback: 'แก้ไข'),
                 isActive: isEditMode,
               ),
             ],
@@ -182,8 +185,8 @@ class CategoryFilter extends StatelessWidget {
     final maxSlots = gridSize * gridSize;
     final showing = cameraCount > maxSlots ? maxSlots : cameraCount;
     final countLabel = cameraCount > maxSlots
-        ? '$showing/$cameraCount cams'
-        : '$showing cam${showing == 1 ? '' : 's'}';
+      ? '$showing/$cameraCount กล้อง'
+      : '$showing กล้อง';
 
     return PopupMenuButton<String?>(
       key: ValueKey(selectedCategoryId),
@@ -200,8 +203,8 @@ class CategoryFilter extends StatelessWidget {
           value: null,
           child: _CategoryMenuItem(
             icon: Icons.grid_view_rounded,
-            name: 'No Filter',
-            subtitle: 'Show all cameras',
+            name: 'ไม่กรอง',
+            subtitle: 'แสดงกล้องทั้งหมด',
             isSelected: selectedCategoryId == null,
           ),
         ),
@@ -209,7 +212,7 @@ class CategoryFilter extends StatelessWidget {
           const PopupMenuDivider(height: 1),
           ...categories.map((cat) {
             final id = cat['id']?.toString();
-            final name = cat['name']?.toString() ?? 'Unknown';
+            final name = cat['name']?.toString() ?? 'ไม่ระบุ';
             final isSel = selectedCategoryId == id;
             return PopupMenuItem<String?>(
               value: id,
@@ -243,7 +246,7 @@ class CategoryFilter extends StatelessWidget {
               children: [
                 Text(
                   selectedCategoryId == null
-                      ? 'No Filter'
+                      ? 'ไม่กรอง'
                       : getCategoryName(selectedCategoryId!),
                   style: const TextStyle(
                       color: Colors.white,
@@ -345,13 +348,13 @@ class CategoryEmptyState extends StatelessWidget {
           const Icon(Icons.folder_open, color: Colors.white38, size: 64),
           const SizedBox(height: 16),
           Text(
-            'There is no camera in "$categoryName"',
+            'ไม่มีข้อมูลกล้องใน "$categoryName"',
             style: const TextStyle(color: Colors.white, fontSize: 16),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
           const Text(
-            'You can add cameras manually from the Collection page',
+            'คุณสามารถเพิ่มกล้องได้จากหน้า Collection',
             style: TextStyle(color: Colors.white38, fontSize: 13),
             textAlign: TextAlign.center,
           ),
@@ -374,17 +377,17 @@ class NoCamerasState extends StatelessWidget {
         children: [
           const Icon(Icons.videocam_off, color: Colors.white54, size: 64),
           const SizedBox(height: 16),
-          const Text('No cameras available',
+          const Text('ไม่พบข้อมูลกล้อง',
               style: TextStyle(color: Colors.white, fontSize: 16)),
           const SizedBox(height: 8),
-          Text('Check your API connection',
+          Text('โปรดตรวจสอบการเชื่อมต่อ API',
               style: TextStyle(
                   color: Colors.white.withOpacity(0.6), fontSize: 14)),
           const SizedBox(height: 24),
           ElevatedButton.icon(
             onPressed: onRefresh,
             icon: const Icon(Icons.refresh),
-            label: const Text('Refresh'),
+            label: Text(context.tr('common.refresh', fallback: 'รีเฟรช')),
             style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue,
                 foregroundColor: Colors.white),
@@ -419,7 +422,7 @@ class ApiErrorState extends StatelessWidget {
           ElevatedButton.icon(
             onPressed: onRetry,
             icon: const Icon(Icons.refresh),
-            label: const Text('Retry'),
+            label: Text(context.tr('common.retry', fallback: 'ลองใหม่')),
             style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue,
                 foregroundColor: Colors.white),

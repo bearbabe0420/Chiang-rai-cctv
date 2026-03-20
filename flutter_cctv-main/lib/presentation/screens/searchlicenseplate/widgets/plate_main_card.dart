@@ -1,5 +1,6 @@
 import 'package:central_command/utils/app_text_styles.dart';
 
+import '/core/i18n/i18n.dart';
 import '/utils/flutter_flow/theme.dart';
 import 'package:flutter/material.dart';
 import '../searchlicenseplate_model.dart';
@@ -94,8 +95,14 @@ class PlateMainCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Page ${model.currentPage} of ${model.totalPages}  '
-                    '(Total ${model.totalItems} items)',
+                    context.tr(
+                      'plate.page_summary',
+                      params: {
+                        'page': '${model.currentPage}',
+                        'totalPages': '${model.totalPages}',
+                        'totalItems': '${model.totalItems}',
+                      },
+                    ),
                     style: const TextStyle(
                       color: Color(0xFF6B7280),
                       fontSize: AppTextStyles.labelSmall,

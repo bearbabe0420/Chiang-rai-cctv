@@ -1,5 +1,6 @@
 import 'package:central_command/utils/app_text_styles.dart';
 
+import '/core/i18n/i18n.dart';
 import '/utils/flutter_flow/theme.dart';
 import 'package:flutter/material.dart';
 
@@ -27,7 +28,7 @@ class CameraSearchBar extends StatelessWidget {
         focusNode: focusNode,
         onChanged: onChanged,
         decoration: InputDecoration(
-          hintText: 'Search cameras by name...',
+          hintText: context.tr('camera_list.search_hint'),
           hintStyle: const TextStyle(
               color: Color(0xFF9CA3AF), fontSize: AppTextStyles.labelNormal),
           prefixIcon:
@@ -71,7 +72,7 @@ class AddCameraButton extends StatelessWidget {
     return ElevatedButton.icon(
       onPressed: onPressed,
       icon: const Icon(Icons.add, size: 18),
-      label: const Text('Add Camera'),
+      label: Text(context.tr('camera_list.add_camera')),
       style: ElevatedButton.styleFrom(
         backgroundColor: FlutterFlowTheme.of(context).primary,
         foregroundColor: Colors.white,

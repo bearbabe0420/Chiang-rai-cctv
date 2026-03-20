@@ -59,7 +59,7 @@ class _StreamLoadingTileState extends State<StreamLoadingTile> {
           ),
           const SizedBox(height: 6),
           Text(
-            _isSlow ? 'Taking longer than usual…' : 'Starting stream…',
+            _isSlow ? 'ใช้เวลานานกว่าปกติ…' : 'กำลังเริ่มสตรีม…',
             style: TextStyle(
               color: Colors.white.withOpacity(0.55),
               fontSize: 9,
@@ -123,7 +123,7 @@ class _VideoTileState extends State<VideoTile> {
           Positioned.fill(
             child: widget.isEditMode
                 ? _editModePlaceholder(
-                    widget.camera?.name ?? 'CAM ${widget.index + 1}')
+                widget.camera?.name ?? 'กล้อง ${widget.index + 1}')
                 : hasCam
                     ? (widget.hlsFuture == null
                         ? StreamLoadingTile(
@@ -149,7 +149,7 @@ class _VideoTileState extends State<VideoTile> {
                                 }
                                 return _ErrorTile(
                                     reason: result?.error ??
-                                        'Stream unavailable');
+                                        'สตรีมไม่พร้อมใช้งาน');
                               }
                               return HlsPlayer(
                                 key: ValueKey(
@@ -176,7 +176,7 @@ class _VideoTileState extends State<VideoTile> {
                 child: Text(
                   hasCam
                       ? widget.camera!.name
-                      : 'CAM ${widget.index + 1}',
+                      : 'กล้อง ${widget.index + 1}',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 10,
@@ -226,7 +226,7 @@ class _VideoTileState extends State<VideoTile> {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                'Stream paused in edit mode',
+              'หยุดสตรีมชั่วคราวในโหมดแก้ไข',
                 style: TextStyle(
                     color: Colors.white.withOpacity(0.6), fontSize: 9),
                 textAlign: TextAlign.center,
@@ -249,14 +249,21 @@ class _ErrorTile extends StatelessWidget {
   Widget build(BuildContext context) {
     IconData icon;
     Color accent;
-    if (reason.contains('timed out') || reason.contains('unreachable')) {
+    if (reason.contains('timed out') ||
+        reason.contains('unreachable') ||
+        reason.contains('หมดเวลา') ||
+        reason.contains('ไม่สามารถติดต่อ')) {
       icon = Icons.wifi_off_rounded;
       accent = Colors.orange;
     } else if (reason.contains('No RTSP') ||
-        reason.contains('not configured')) {
+        reason.contains('not configured') ||
+        reason.contains('RTSP') ||
+        reason.contains('ยังไม่ได้ตั้งค่า')) {
       icon = Icons.videocam_off_rounded;
       accent = Colors.grey;
-    } else if (reason.contains('400') || reason.contains('Bad request')) {
+    } else if (reason.contains('400') ||
+        reason.contains('Bad request') ||
+        reason.contains('คำขอไม่ถูกต้อง')) {
       icon = Icons.error_outline_rounded;
       accent = Colors.amber;
     } else {
@@ -273,7 +280,7 @@ class _ErrorTile extends StatelessWidget {
           Icon(icon, color: accent, size: 26),
           const SizedBox(height: 6),
           Text(
-            'Stream Unavailable',
+            'สตรีมไม่พร้อมใช้งาน',
             style: TextStyle(
               color: accent,
               fontSize: 10,
@@ -326,7 +333,7 @@ class _NoStreamSlot extends StatelessWidget {
               color: Colors.white24, size: 32),
           const SizedBox(height: 8),
           Text(
-            'EMPTY SLOT ${index + 1}',
+            'ช่องว่าง ${index + 1}',
             style: const TextStyle(color: Colors.white54, fontSize: 10),
             textAlign: TextAlign.center,
           ),

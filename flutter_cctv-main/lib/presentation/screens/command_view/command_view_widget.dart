@@ -250,14 +250,14 @@ class _CommandWidgetState extends State<CommandWidget> {
       } else {
         setState(() {
           _isLoading = false;
-          _errorMessage = 'API Error: ${response.statusCode}';
+          _errorMessage = 'ข้อผิดพลาดจาก API: ${response.statusCode}';
         });
       }
     } catch (e) {
       if (_fetchSeq != mySeq) return;
       setState(() {
         _isLoading = false;
-        _errorMessage = 'Error: $e';
+        _errorMessage = 'เกิดข้อผิดพลาด: $e';
       });
     }
   }
@@ -326,13 +326,13 @@ class _CommandWidgetState extends State<CommandWidget> {
     try {
       final cat = _categories.firstWhere(
         (c) => c['id']?.toString() == categoryId,
-        orElse: () => {'name': 'Unknown'},
+        orElse: () => {'name': 'ไม่ระบุ'},
       );
-      final name = cat['name']?.toString() ?? 'Unknown';
+      final name = cat['name']?.toString() ?? 'ไม่ระบุ';
       if (!truncate) return name;
       return name.length > 9 ? '${name.substring(0, 9)}...' : name;
     } catch (_) {
-      return 'Unknown';
+      return 'ไม่ระบุ';
     }
   }
 
@@ -407,7 +407,7 @@ class _CommandWidgetState extends State<CommandWidget> {
         String? hlsUrl =
             obj is Map ? obj['hlsUrl'] as String? : null;
         if (hlsUrl == null || hlsUrl.isEmpty) {
-          return const HlsResult(error: 'Server returned no HLS URL');
+          return const HlsResult(error: 'เซิร์ฟเวอร์ไม่ส่งลิงก์ HLS');
         }
         final finalUrl =
             hlsUrl.startsWith('http') ? hlsUrl : '$kApiBaseUrl$hlsUrl';
@@ -418,13 +418,13 @@ class _CommandWidgetState extends State<CommandWidget> {
           final msg = err['error']?.toString() ?? resp.body;
           if (msg.contains('No RTSP URL configured')) {
             return const HlsResult(
-                error: 'No RTSP URL configured for this camera');
+                error: 'ยังไม่ได้ตั้งค่า RTSP URL สำหรับกล้องนี้');
           }
-          return HlsResult(error: 'Bad request: $msg');
+          return HlsResult(error: 'คำขอไม่ถูกต้อง: $msg');
         } catch (_) {
           return HlsResult(
               error:
-                  'Bad request (400): ${resp.body.length > 80 ? resp.body.substring(0, 80) : resp.body}');
+                  'คำขอไม่ถูกต้อง (400): ${resp.body.length > 80 ? resp.body.substring(0, 80) : resp.body}');
         }
       } else {
         return HlsResult(
@@ -436,9 +436,9 @@ class _CommandWidgetState extends State<CommandWidget> {
       _hlsCache.remove(removeKey);
       if (e.toString().contains('TimeoutException')) {
         return const HlsResult(
-            error: 'Connection timed out — server unreachable');
+            error: 'การเชื่อมต่อหมดเวลา - ไม่สามารถติดต่อเซิร์ฟเวอร์ได้');
       }
-      return HlsResult(error: 'Unexpected error: $e');
+      return HlsResult(error: 'เกิดข้อผิดพลาดที่ไม่คาดคิด: $e');
     }
   }
 

@@ -25,7 +25,7 @@ class CameraInfo {
       id: docId ?? data['id']?.toString() ?? '',
       name: (data['name'] as String?)?.trim().isNotEmpty == true
           ? (data['name'] as String)
-          : 'Camera',
+          : 'กล้อง',
       rtspUrl: (data['rtspUrl'] as String? ??
               data['url'] as String? ??
               data['URL'] as String? ??
