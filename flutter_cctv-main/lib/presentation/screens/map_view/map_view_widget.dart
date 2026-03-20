@@ -1,16 +1,13 @@
-import '/presentation/widgets/map/views/map_view_component_widget.dart';
-import '/presentation/widgets/map/views/marker_info_popup_widget.dart';
+import '/presentation/screens/map_view/widgets/views/map_view_component_widget.dart';
+import '/presentation/screens/map_view/widgets/views/marker_info_popup_widget.dart';
 import '/presentation/widgets/nav/views/nav_bar_main_widget.dart';
-import '/presentation/widgets/camera/views/preview_overlay_widget.dart';
+import '/presentation/screens/map_view/widgets/views/preview_overlay_widget.dart';
 import '/data/repositories/camera_repository.dart';
 import '/core/i18n/i18n.dart';
 import '/utils/flutter_flow/theme.dart';
 import '/utils/flutter_flow/util.dart';
 import '/utils/flutter_flow/widgets.dart';
-import 'dart:ui';
-import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'map_view_model.dart';
@@ -32,10 +29,16 @@ class _MapViewWidgetState extends State<MapViewWidget> {
   dynamic _selectedCamera;
 
   @override
+  void setState(VoidCallback callback) {
+    super.setState(callback);
+    _model.onUpdate();
+  }
+
+  @override
   void initState() {
     super.initState();
     _model = createModel(context, () => MapViewModel());
-    SchedulerBinding.instance.addPostFrameCallback((_) async {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _loadCameras();
     });
     WidgetsBinding.instance.addPostFrameCallback((_) => safeSetState(() {}));
@@ -43,7 +46,7 @@ class _MapViewWidgetState extends State<MapViewWidget> {
 
   @override
   void dispose() {
-    _model.dispose();
+    _model.maybeDispose();
     super.dispose();
   }
 
@@ -58,18 +61,20 @@ class _MapViewWidgetState extends State<MapViewWidget> {
 
       _model.totalCameras = cameras.length;
       _model.onlineCameras = cameras.where((c) => c.status == 'online').length;
-      _model.offlineCameras = cameras.where((c) => c.status == 'offline').length;
+      _model.offlineCameras =
+          cameras.where((c) => c.status == 'offline').length;
 
-      _model.cameraDocuments = cameras.map((camera) => <String, dynamic>{
-            'id': camera.id,
-            'name': camera.name,
-            'latLong': camera.latLong,
-            'address': camera.address,
-            'rtspUrl': camera.rtspUrl,
-            'status': camera.status,
-        'lastSeen': camera.lastSeen,
-            'categories': camera.categories,
-          }).toList();
+      _model.cameraDocuments =
+          cameras.map((camera) => <String, dynamic>{
+                'id': camera.id,
+                'name': camera.name,
+                'latLong': camera.latLong,
+                'address': camera.address,
+                'rtspUrl': camera.rtspUrl,
+                'status': camera.status,
+                'lastSeen': camera.lastSeen,
+                'categories': camera.categories,
+              }).toList();
 
       safeSetState(() {
         _model.isLoading = false;
@@ -95,8 +100,6 @@ class _MapViewWidgetState extends State<MapViewWidget> {
       }
     }
   }
-
-  // ── helpers ──────────────────────────────────────────────────────────────
 
   Widget _stateOverlay({required Widget child}) => Container(
         color: Colors.black.withOpacity(0.7),
@@ -128,8 +131,6 @@ class _MapViewWidgetState extends State<MapViewWidget> {
         elevation: 2,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       );
-
-  // ── states ────────────────────────────────────────────────────────────────
 
   Widget _loadingState() => _stateOverlay(
         child: Column(
@@ -260,7 +261,6 @@ class _MapViewWidgetState extends State<MapViewWidget> {
 
   Widget _mapView() => Stack(
         children: [
-          // Full-size map
           Align(
             alignment: Alignment.center,
             child: wrapWithModel(
@@ -277,7 +277,6 @@ class _MapViewWidgetState extends State<MapViewWidget> {
               ),
             ),
           ),
-          // ── Camera info popup (no dialog barrier) ──────────────────────
           if (_selectedCamera != null)
             GestureDetector(
               behavior: HitTestBehavior.opaque,
@@ -285,7 +284,7 @@ class _MapViewWidgetState extends State<MapViewWidget> {
               child: Align(
                 alignment: Alignment.center,
                 child: GestureDetector(
-                  onTap: () {}, // absorb taps inside card
+                  onTap: () {},
                   child: MarkerInfoPopupWidget(
                     cameraData: _selectedCamera,
                     onCloseTapped: () async =>
@@ -298,8 +297,6 @@ class _MapViewWidgetState extends State<MapViewWidget> {
                 ),
               ),
             ),
-
-          // Preview panel
           if (_model.previewList.isNotEmpty)
             Align(
               alignment: AlignmentDirectional.centerStart,
@@ -346,10 +343,10 @@ class _MapViewWidgetState extends State<MapViewWidget> {
         ),
       );
 
-  // ── build ─────────────────────────────────────────────────────────────────
-
   @override
   Widget build(BuildContext context) {
+    context.watch<AppState>();
+
     return GestureDetector(
       onTap: () {
         FocusScope.of(context).unfocus();
@@ -379,7 +376,6 @@ class _MapViewWidgetState extends State<MapViewWidget> {
             builder: (context, constraints) {
               return Stack(
                 children: [
-                  // ── map area (bounded) ──
                   SizedBox(
                     width: constraints.maxWidth,
                     height: constraints.maxHeight,
@@ -389,8 +385,7 @@ class _MapViewWidgetState extends State<MapViewWidget> {
                         fit: StackFit.expand,
                         children: [
                           if (_model.isLoading) _loadingState(),
-                          if (!_model.isLoading &&
-                              _model.errorMessage != null)
+                          if (!_model.isLoading && _model.errorMessage != null)
                             _errorState(),
                           if (!_model.isLoading &&
                               _model.errorMessage == null &&
@@ -404,7 +399,6 @@ class _MapViewWidgetState extends State<MapViewWidget> {
                       ),
                     ),
                   ),
-                  // ── floating dashboard ──
                   if (!_model.isLoading && _model.errorMessage == null)
                     Positioned(
                       top: 12,

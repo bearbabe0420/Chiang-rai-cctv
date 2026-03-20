@@ -1,24 +1,20 @@
+import 'package:central_command/presentation/screens/list_camera_page/widgets/stat_row.dart';
+import 'package:central_command/presentation/screens/list_camera_page/widgets/table_card.dart';
+import 'package:central_command/presentation/screens/list_camera_page/widgets/table_cells.dart';
 import '/data/services/index.dart';
-import '/core/i18n/i18n.dart';
-import '/presentation/widgets/camera/views/addnewcamera_widget.dart';
-import '/presentation/widgets/camera/views/detailscamera_widget.dart';
-import '/presentation/widgets/camera/views/editdatacamera_widget.dart';
+import '/presentation/screens/list_camera_page/widgets/views/addnewcamera_widget.dart';
+import '/presentation/screens/list_camera_page/widgets/views/detailscamera_widget.dart';
+import '/presentation/screens/list_camera_page/widgets/views/editdatacamera_widget.dart';
 import '/presentation/widgets/nav/views/nav_bar_main_widget.dart';
-import '/presentation/widgets/shared/category_chip.dart';
-import '/presentation/widgets/shared/status_chip.dart';
+import '../collection/widgets/category_chip.dart';
+import 'widgets/status_chip.dart';
 import '/utils/flutter_flow/theme.dart';
 import '/utils/flutter_flow/util.dart';
-import '/utils/flutter_flow/widgets.dart';
 import 'package:easy_debounce/easy_debounce.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'list_camera_page_model.dart';
 export 'list_camera_page_model.dart';
-
-// =============================================================================
-// Page
-// =============================================================================
 
 class ListCameraPageWidget extends StatefulWidget {
   const ListCameraPageWidget({super.key});
@@ -45,7 +41,6 @@ class _ListCameraPageWidgetState extends State<ListCameraPageWidget> {
     _model.searchBarTextController?.addListener(() => safeSetState(() {}));
 
     SchedulerBinding.instance.addPostFrameCallback((_) async {
-      // ดึงพร้อมกันทั้งคู่ ไม่ต้อง await ทีละอัน
       await Future.wait([_fetchCameras(page: 1), _fetchCameraStats()]);
     });
 
@@ -76,7 +71,7 @@ class _ListCameraPageWidgetState extends State<ListCameraPageWidget> {
       if (response.succeeded) {
         final dataList = CameraService().parseDataList(response.jsonBody) ?? [];
 
-        // ── Sort: exact/prefix name match float to top ──────────────────────
+        // Sort: exact/prefix match float to top
         final q = search.toLowerCase();
         if (q.isNotEmpty) {
           dataList.sort((a, b) {
@@ -150,29 +145,31 @@ class _ListCameraPageWidgetState extends State<ListCameraPageWidget> {
     );
   }
 
-  Future<void> _refresh() =>
-      Future.wait([_fetchCameras(page: 1, search: _model.searchQuery), _fetchCameraStats()]);
+  Future<void> _refresh() => Future.wait([
+        _fetchCameras(page: 1, search: _model.searchQuery),
+        _fetchCameraStats(),
+      ]);
 
   // ---------------------------------------------------------------------------
   // Actions
   // ---------------------------------------------------------------------------
 
   Future<void> _confirmDelete(BuildContext context, dynamic item) async {
-    final name = getJsonField(item, r'$.name')?.toString() ?? context.tr('camera_list.columns.name');
+    final name = getJsonField(item, r'$.name')?.toString() ?? 'this camera';
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(context.tr('camera_list.confirm_delete_title')),
-        content: Text(context.tr('camera_list.confirm_delete_message', params: {'name': name})),
+        title: const Text('Confirm Deletion'),
+        content: Text('Are you sure you want to delete "$name"?'),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: Text(context.tr('common.cancel'))),
+              child: const Text('Cancel')),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFEF4444)),
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text(context.tr('common.delete'), style: const TextStyle(color: Colors.white)),
+            child: const Text('Delete', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -188,10 +185,11 @@ class _ListCameraPageWidgetState extends State<ListCameraPageWidget> {
 
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(response.succeeded
-      ? context.tr('camera_list.deleted_success', params: {'name': name})
-      : context.tr('camera_list.deleted_failed', params: {'statusCode': '${response.statusCode}'})),
-      backgroundColor:
-          response.succeeded ? const Color(0xFF16A34A) : const Color(0xFFEF4444),
+          ? 'Deleted "$name" successfully'
+          : 'Failed to delete: ${response.statusCode}'),
+      backgroundColor: response.succeeded
+          ? const Color(0xFF16A34A)
+          : const Color(0xFFEF4444),
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
     ));
@@ -232,9 +230,8 @@ class _ListCameraPageWidgetState extends State<ListCameraPageWidget> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Title
                 Text(
-                  context.tr('camera_list.title'),
+                  'List Cameras',
                   style: FlutterFlowTheme.of(context).headlineLarge.override(
                         fontFamily: FlutterFlowTheme.of(context)
                             .headlineLargeFamily,
@@ -246,12 +243,12 @@ class _ListCameraPageWidgetState extends State<ListCameraPageWidget> {
                 ),
                 const SizedBox(height: 20),
 
-                // Stat cards
-                _CameraStatRow(model: _model),
+                // Stat Cards
+                CameraStatRow(model: _model),
                 const SizedBox(height: 24),
 
-                // Main card
-                _CameraTableCard(
+                // Table Card
+                CameraTableCard(
                   model: _model,
                   onSearchChanged: _onSearchChanged,
                   onClearSearch: () {
@@ -278,17 +275,12 @@ class _ListCameraPageWidgetState extends State<ListCameraPageWidget> {
   }
 
   // ---------------------------------------------------------------------------
-  // Table
+  // Table builder (อยู่ใน State เพราะต้องการ context + callbacks)
   // ---------------------------------------------------------------------------
 
   Widget _buildDataTable(BuildContext context) {
-    final columns = [
-      context.tr('camera_list.columns.name'),
-      context.tr('camera_list.columns.latlong'),
-      context.tr('camera_list.columns.address'),
-      context.tr('camera_list.columns.status'),
-      context.tr('camera_list.columns.category'),
-      context.tr('camera_list.columns.action'),
+    const columns = [
+      'Name', 'LatLong', 'Address', 'Status', 'Category', 'Action'
     ];
     const columnWidths = <int, TableColumnWidth>{
       0: FlexColumnWidth(2),
@@ -306,7 +298,7 @@ class _ListCameraPageWidgetState extends State<ListCameraPageWidget> {
         border: TableBorder(
             horizontalInside: BorderSide(color: Colors.grey.shade200)),
         children: [
-          // Header
+          // Header row
           TableRow(
             decoration:
                 BoxDecoration(color: FlutterFlowTheme.of(context).primary),
@@ -328,6 +320,7 @@ class _ListCameraPageWidgetState extends State<ListCameraPageWidget> {
                     ))
                 .toList(),
           ),
+
           // Data rows
           ..._model.listOFcamera.asMap().entries.map((entry) {
             final i = entry.key;
@@ -341,7 +334,8 @@ class _ListCameraPageWidgetState extends State<ListCameraPageWidget> {
             if (lastSeenRaw is String) {
               lastSeen = DateTime.tryParse(lastSeenRaw);
             } else if (lastSeenRaw is int) {
-              lastSeen = DateTime.fromMillisecondsSinceEpoch(lastSeenRaw * 1000);
+              lastSeen =
+                  DateTime.fromMillisecondsSinceEpoch(lastSeenRaw * 1000);
             }
 
             return TableRow(
@@ -349,23 +343,16 @@ class _ListCameraPageWidgetState extends State<ListCameraPageWidget> {
                 color: i % 2 == 1 ? const Color(0xFFF9FAFB) : Colors.white,
               ),
               children: [
-                // Name (highlight match)
-                _NameCell(
-                  name: name,
-                  search: _model.searchQuery,
-                ),
-                // LatLong
-                _TextCell(
+                NameCell(name: name, search: _model.searchQuery),
+                TextCell(
                   getJsonField(item, r'$.latLong')?.toString() ?? '-',
                   fontSize: AppTextStyles.tableTimestamp,
                   color: const Color(0xFF6B7280),
                 ),
-                // Address
-                _TextCell(
+                TextCell(
                   getJsonField(item, r'$.address')?.toString() ?? '-',
                   fontSize: AppTextStyles.tableTimestamp,
                 ),
-                // Status
                 TableCell(
                   verticalAlignment: TableCellVerticalAlignment.middle,
                   child: Padding(
@@ -378,27 +365,25 @@ class _ListCameraPageWidgetState extends State<ListCameraPageWidget> {
                     ),
                   ),
                 ),
-                // Categories
                 TableCell(
                   verticalAlignment: TableCellVerticalAlignment.middle,
                   child: Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 8),
                     child: _buildCategoryChips(item),
                   ),
                 ),
-                // Actions
                 TableCell(
                   verticalAlignment: TableCellVerticalAlignment.middle,
                   child: Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 4, vertical: 6),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        _ActionBtn(
+                        ActionBtn(
                           icon: Icons.remove_red_eye_outlined,
-                          tooltip: context.tr('camera_list.tooltip.view_details'),
+                          tooltip: 'View details',
                           color: FlutterFlowTheme.of(context).primary,
                           onPressed: () => showDialog(
                             context: context,
@@ -406,9 +391,9 @@ class _ListCameraPageWidgetState extends State<ListCameraPageWidget> {
                                 DetailscameraWidget(cameraData: item),
                           ),
                         ),
-                        _ActionBtn(
+                        ActionBtn(
                           icon: Icons.edit_outlined,
-                          tooltip: context.tr('camera_list.tooltip.edit'),
+                          tooltip: 'Edit',
                           color: const Color(0xFFF59E0B),
                           onPressed: () async {
                             final result = await showDialog<bool>(
@@ -426,9 +411,9 @@ class _ListCameraPageWidgetState extends State<ListCameraPageWidget> {
                             }
                           },
                         ),
-                        _ActionBtn(
+                        ActionBtn(
                           icon: Icons.delete_outline,
-                          tooltip: context.tr('camera_list.tooltip.delete'),
+                          tooltip: 'Delete',
                           color: const Color(0xFFEF4444),
                           onPressed: () => _confirmDelete(context, item),
                         ),
@@ -462,641 +447,6 @@ class _ListCameraPageWidgetState extends State<ListCameraPageWidget> {
           .map((n) =>
               CategoryChip(name: n, fontSize: AppTextStyles.tableStatus))
           .toList(),
-    );
-  }
-}
-
-// =============================================================================
-// _CameraStatRow  — stat cards ที่ rebuild แค่ส่วนของตัวเอง
-// =============================================================================
-
-class _CameraStatRow extends StatelessWidget {
-  final ListCameraPageModel model;
-  const _CameraStatRow({required this.model});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        _StatCard(
-          icon: Icons.camera_outdoor,
-          iconColor: FlutterFlowTheme.of(context).primary,
-          label: context.tr('camera_list.total_cameras'),
-          count: model.totalCameras,
-        ),
-        const SizedBox(width: 16),
-        _StatCard(
-          icon: Icons.wifi,
-          iconColor: const Color(0xFF16A34A),
-          label: context.tr('camera_list.online'),
-          count: model.onlineCameras,
-        ),
-        const SizedBox(width: 16),
-        _StatCard(
-          icon: Icons.wifi_off,
-          iconColor: const Color(0xFFDC2626),
-          label: context.tr('camera_list.offline'),
-          count: model.offlineCameras,
-        ),
-      ],
-    );
-  }
-}
-
-// =============================================================================
-// _StatCard
-// =============================================================================
-
-class _StatCard extends StatelessWidget {
-  final IconData icon;
-  final Color iconColor;
-  final String label;
-  final int count;
-
-  const _StatCard({
-    required this.icon,
-    required this.iconColor,
-    required this.label,
-    required this.count,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 110,
-      constraints: const BoxConstraints(minWidth: 180, maxWidth: 260),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFE5E7EB), width: 2),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: Row(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: iconColor.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: iconColor, size: 26),
-            ),
-            const SizedBox(width: 16),
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: GoogleFonts.plusJakartaSans(
-                    color: const Color(0xFF606A85),
-                    fontSize: AppTextStyles.badge,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  count.toString(),
-                  style: GoogleFonts.outfit(
-                    color: const Color(0xFF15161E),
-                    fontSize: AppTextStyles.statCardHero,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// =============================================================================
-// _CameraTableCard  — card wrapper: toolbar + table + pagination
-// =============================================================================
-
-class _CameraTableCard extends StatelessWidget {
-  final ListCameraPageModel model;
-  final ValueChanged<String> onSearchChanged;
-  final VoidCallback onClearSearch;
-  final VoidCallback onAddCamera;
-  final ValueChanged<int> onPageChanged;
-  final Widget Function() buildTable;
-
-  const _CameraTableCard({
-    required this.model,
-    required this.onSearchChanged,
-    required this.onClearSearch,
-    required this.onAddCamera,
-    required this.onPageChanged,
-    required this.buildTable,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Toolbar
-            Row(
-              children: [
-                Expanded(
-                  child: _SearchBar(
-                    controller: model.searchBarTextController,
-                    focusNode: model.searchBarFocusNode,
-                    onChanged: onSearchChanged,
-                    onClear: onClearSearch,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                _AddCameraButton(onPressed: onAddCamera),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            // Table / Loading / Empty
-            if (model.isLoading)
-              SizedBox(
-                height: 300,
-                child: Center(
-                  child: CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                        FlutterFlowTheme.of(context).primary),
-                  ),
-                ),
-              )
-            else if (model.listOFcamera.isEmpty)
-              const _EmptyState()
-            else
-              LayoutBuilder(builder: (context, constraints) {
-                const double minWidth = 1100;
-                final w = constraints.maxWidth;
-                if (w >= minWidth) return buildTable();
-                if (w >= 800) {
-                  return Transform.scale(
-                    scale: w / minWidth,
-                    alignment: Alignment.topLeft,
-                    child: SizedBox(width: minWidth, child: buildTable()),
-                  );
-                }
-                return SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: SizedBox(width: minWidth, child: buildTable()),
-                );
-              }),
-
-            const SizedBox(height: 20),
-
-            // Pagination
-            if (!model.isLoading)
-              Column(
-                children: [
-                  const Divider(height: 1, color: Color(0xFFE5E7EB)),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        context.tr(
-                          'camera_list.page_summary',
-                          params: {
-                            'page': '${model.currentPage}',
-                            'totalPages': '${model.totalPages}',
-                            'totalItems': '${model.totalCameras}',
-                          },
-                        ),
-                        style: const TextStyle(
-                          color: Color(0xFF6B7280),
-                          fontSize: AppTextStyles.labelSmall,
-                        ),
-                      ),
-                      _Pagination(
-                        currentPage: model.currentPage,
-                        totalPages: model.totalPages,
-                        onPageChanged: onPageChanged,
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// =============================================================================
-// _SearchBar
-// =============================================================================
-
-class _SearchBar extends StatelessWidget {
-  final TextEditingController? controller;
-  final FocusNode? focusNode;
-  final ValueChanged<String> onChanged;
-  final VoidCallback onClear;
-
-  const _SearchBar({
-    required this.controller,
-    required this.focusNode,
-    required this.onChanged,
-    required this.onClear,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 44,
-      child: TextField(
-        controller: controller,
-        focusNode: focusNode,
-        onChanged: onChanged,
-        decoration: InputDecoration(
-          hintText: context.tr('camera_list.search_hint'),
-          hintStyle: const TextStyle(
-              color: Color(0xFF9CA3AF), fontSize: AppTextStyles.labelNormal),
-          prefixIcon: const Icon(Icons.search, color: Color(0xFF9CA3AF), size: 20),
-          suffixIcon: (controller?.text.isNotEmpty ?? false)
-              ? IconButton(
-                  icon: const Icon(Icons.close, size: 18, color: Color(0xFF9CA3AF)),
-                  onPressed: onClear,
-                )
-              : null,
-          filled: true,
-          fillColor: const Color(0xFFF9FAFB),
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide:
-                BorderSide(color: FlutterFlowTheme.of(context).primary),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// =============================================================================
-// _AddCameraButton
-// =============================================================================
-
-class _AddCameraButton extends StatelessWidget {
-  final VoidCallback onPressed;
-  const _AddCameraButton({required this.onPressed});
-
-  @override
-  Widget build(BuildContext context) {
-    return ElevatedButton.icon(
-      onPressed: onPressed,
-      icon: const Icon(Icons.add, size: 18),
-      label: Text(context.tr('camera_list.add_camera')),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: FlutterFlowTheme.of(context).primary,
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        textStyle: const TextStyle(
-            fontWeight: FontWeight.w600, fontSize: AppTextStyles.labelNormal),
-      ),
-    );
-  }
-}
-
-// =============================================================================
-// _EmptyState
-// =============================================================================
-
-class _EmptyState extends StatelessWidget {
-  const _EmptyState();
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 200,
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.videocam_off, size: 48, color: Colors.grey.shade400),
-            const SizedBox(height: 12),
-            Text(
-              context.tr('camera_list.empty'),
-              style: TextStyle(
-                  color: Colors.grey.shade500,
-                  fontSize: AppTextStyles.labelNormal),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// =============================================================================
-// _NameCell  — แสดง name และ highlight ส่วนที่ตรงกับ search
-// =============================================================================
-
-class _NameCell extends StatelessWidget {
-  final String name;
-  final String search;
-
-  const _NameCell({required this.name, required this.search});
-
-  @override
-  Widget build(BuildContext context) {
-    return TableCell(
-      verticalAlignment: TableCellVerticalAlignment.middle,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        child: search.isEmpty
-            ? Text(name,
-                style: const TextStyle(
-                    fontSize: AppTextStyles.tableCell,
-                    color: Color(0xFF111827)))
-            : _HighlightText(text: name, query: search),
-      ),
-    );
-  }
-}
-
-/// Highlights matching substring in bold + primary color
-class _HighlightText extends StatelessWidget {
-  final String text;
-  final String query;
-
-  const _HighlightText({required this.text, required this.query});
-
-  @override
-  Widget build(BuildContext context) {
-    final q = query.toLowerCase();
-    final lower = text.toLowerCase();
-    final idx = lower.indexOf(q);
-    if (idx < 0) {
-      return Text(text,
-          style: const TextStyle(
-              fontSize: AppTextStyles.tableCell, color: Color(0xFF111827)));
-    }
-    return RichText(
-      text: TextSpan(
-        style: const TextStyle(
-            fontSize: AppTextStyles.tableCell, color: Color(0xFF111827)),
-        children: [
-          if (idx > 0) TextSpan(text: text.substring(0, idx)),
-          TextSpan(
-            text: text.substring(idx, idx + query.length),
-            style: TextStyle(
-              fontWeight: FontWeight.w700,
-              color: FlutterFlowTheme.of(context).primary,
-              backgroundColor:
-                  FlutterFlowTheme.of(context).primary.withOpacity(0.1),
-            ),
-          ),
-          if (idx + query.length < text.length)
-            TextSpan(text: text.substring(idx + query.length)),
-        ],
-      ),
-    );
-  }
-}
-
-// =============================================================================
-// _TextCell  — generic text table cell
-// =============================================================================
-
-class _TextCell extends StatelessWidget {
-  final String text;
-  final double fontSize;
-  final Color? color;
-
-  const _TextCell(this.text,
-      {this.fontSize = AppTextStyles.tableCell, this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return TableCell(
-      verticalAlignment: TableCellVerticalAlignment.middle,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        child: Text(
-          text,
-          style:
-              TextStyle(fontSize: fontSize, color: color ?? const Color(0xFF111827)),
-        ),
-      ),
-    );
-  }
-}
-
-// =============================================================================
-// _ActionBtn
-// =============================================================================
-
-class _ActionBtn extends StatelessWidget {
-  final IconData icon;
-  final String tooltip;
-  final Color color;
-  final VoidCallback onPressed;
-
-  const _ActionBtn({
-    required this.icon,
-    required this.tooltip,
-    required this.color,
-    required this.onPressed,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Tooltip(
-      message: tooltip,
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(6),
-        child: Container(
-          width: AppTextStyles.tableCell + 12,
-          height: AppTextStyles.tableCell + 12,
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.12),
-            borderRadius: BorderRadius.circular(6),
-          ),
-          child: Icon(icon, size: AppTextStyles.tableCell, color: color),
-        ),
-      ),
-    );
-  }
-}
-
-// =============================================================================
-// _Pagination
-// =============================================================================
-
-class _Pagination extends StatelessWidget {
-  final int currentPage;
-  final int totalPages;
-  final ValueChanged<int> onPageChanged;
-
-  const _Pagination({
-    required this.currentPage,
-    required this.totalPages,
-    required this.onPageChanged,
-  });
-
-  List<int?> get _pageNums {
-    final total = totalPages;
-    final current = currentPage;
-    if (total <= 7) return [for (int p = 1; p <= total; p++) p];
-    final nums = <int?>[1];
-    if (current > 3) nums.add(null);
-    final start = (current - 1).clamp(2, total - 1);
-    final end = (current + 1).clamp(2, total - 1);
-    for (int p = start; p <= end; p++) nums.add(p);
-    if (current < total - 2) nums.add(null);
-    nums.add(total);
-    return nums;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        _NavBtn(
-          icon: Icons.first_page,
-          enabled: currentPage > 1,
-          onTap: () => onPageChanged(1),
-        ),
-        const SizedBox(width: 2),
-        _NavBtn(
-          icon: Icons.chevron_left,
-          enabled: currentPage > 1,
-          onTap: () => onPageChanged(currentPage - 1),
-        ),
-        const SizedBox(width: 4),
-        ..._pageNums.map((p) {
-          if (p == null) {
-            return const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 4),
-              child: Text('...',
-                  style: TextStyle(
-                      color: Color(0xFF6B7280),
-                      fontSize: AppTextStyles.labelNormal)),
-            );
-          }
-          final isActive = p == currentPage;
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 3),
-            child: InkWell(
-              onTap: isActive ? null : () => onPageChanged(p),
-              borderRadius: BorderRadius.circular(6),
-              child: Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: isActive
-                      ? FlutterFlowTheme.of(context).primary
-                      : Colors.white,
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(
-                    color: isActive
-                        ? FlutterFlowTheme.of(context).primary
-                        : const Color(0xFFD1D5DB),
-                  ),
-                ),
-                child: Center(
-                  child: Text(
-                    '$p',
-                    style: TextStyle(
-                      color:
-                          isActive ? Colors.white : const Color(0xFF374151),
-                      fontWeight: FontWeight.w600,
-                      fontSize: AppTextStyles.badge,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          );
-        }),
-        const SizedBox(width: 4),
-        _NavBtn(
-          icon: Icons.chevron_right,
-          enabled: currentPage < totalPages,
-          onTap: () => onPageChanged(currentPage + 1),
-        ),
-        const SizedBox(width: 2),
-        _NavBtn(
-          icon: Icons.last_page,
-          enabled: currentPage < totalPages,
-          onTap: () => onPageChanged(totalPages),
-        ),
-      ],
-    );
-  }
-}
-
-class _NavBtn extends StatelessWidget {
-  final IconData icon;
-  final bool enabled;
-  final VoidCallback onTap;
-
-  const _NavBtn(
-      {required this.icon, required this.enabled, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: enabled ? onTap : null,
-      child: Container(
-        width: 36,
-        height: 36,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(
-            color:
-                enabled ? const Color(0xFFD1D5DB) : const Color(0xFFE5E7EB),
-          ),
-        ),
-        child: Icon(icon,
-            size: 20,
-            color: enabled
-                ? const Color(0xFF374151)
-                : const Color(0xFFD1D5DB)),
-      ),
     );
   }
 }

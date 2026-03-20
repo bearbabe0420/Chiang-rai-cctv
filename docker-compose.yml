@@ -217,7 +217,7 @@ services:
     ports:
       - "3003:3001"
     volumes:
-      - ./uptime-kuma-data:/app/data
+      - kuma-data:/app/data
     environment:
       - TZ=Asia/Bangkok
       - UMASK=0022
@@ -232,3 +232,6 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+
+volumes:
+  kuma-data:
