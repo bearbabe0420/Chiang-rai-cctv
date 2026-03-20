@@ -1,5 +1,6 @@
 import 'package:central_command/utils/app_text_styles.dart';
 
+import '/core/i18n/i18n.dart';
 import '/utils/flutter_flow/theme.dart';
 import 'package:flutter/material.dart';
 import '../list_camera_page_model.dart';
@@ -104,8 +105,14 @@ class CameraTableCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Page ${model.currentPage} of ${model.totalPages}  '
-                    '(Total ${model.totalCameras} items)',
+                    context.tr(
+                      'camera_list.page_summary',
+                      params: {
+                        'page': '${model.currentPage}',
+                        'totalPages': '${model.totalPages}',
+                        'totalItems': '${model.totalCameras}',
+                      },
+                    ),
                     style: const TextStyle(
                       color: Color(0xFF6B7280),
                       fontSize: AppTextStyles.labelSmall,

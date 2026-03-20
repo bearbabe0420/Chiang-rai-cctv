@@ -159,7 +159,7 @@ class _HlsPlayerWebState extends State<HlsPlayer> {
         'M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/>' +
         '<line x1="2" y1="2" x2="22" y2="22" stroke="#ef4444" stroke-width="1.5"/>' +
         '</svg>' +
-        '<span>Stream Unavailable</span>' +
+        '<span>สตรีมไม่พร้อมใช้งาน</span>' +
         '</div>';
       console.warn('[HLS] Unavailable:', reason);
     }
@@ -261,7 +261,7 @@ class _HlsPlayerWebState extends State<HlsPlayer> {
                 color: Colors.grey.shade600, size: 36),
             const SizedBox(height: 8),
             Text(
-              'Stream Unavailable',
+              'สตรีมไม่พร้อมใช้งาน',
               style: TextStyle(
                 color: Colors.grey.shade500,
                 fontSize: 13,

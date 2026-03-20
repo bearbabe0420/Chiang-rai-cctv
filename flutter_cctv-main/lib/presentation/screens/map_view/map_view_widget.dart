@@ -81,12 +81,12 @@ class _MapViewWidgetState extends State<MapViewWidget> {
     } catch (e) {
       safeSetState(() {
         _model.isLoading = false;
-        _model.errorMessage = 'Failed to load cameras: $e';
+        _model.errorMessage = 'โหลดข้อมูลกล้องไม่สำเร็จ: $e';
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error loading cameras: $e'),
+            content: Text('เกิดข้อผิดพลาดในการโหลดกล้อง: $e'),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 5),
           ),
@@ -136,7 +136,7 @@ class _MapViewWidgetState extends State<MapViewWidget> {
             ),
             const SizedBox(height: 20),
             Text(
-              'Loading cameras...',
+              'กำลังโหลดข้อมูลกล้อง...',
               style: TextStyle(
                 color: const Color(0xFF111827),
                 fontSize: AppTextStyles.tableHeader,
@@ -145,7 +145,7 @@ class _MapViewWidgetState extends State<MapViewWidget> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Please wait',
+              'โปรดรอสักครู่',
               style: TextStyle(
                 color: const Color(0xFF6B7280),
                 fontSize: AppTextStyles.labelSmall,
@@ -170,7 +170,7 @@ class _MapViewWidgetState extends State<MapViewWidget> {
             ),
             const SizedBox(height: 20),
             Text(
-              'Error Loading Map',
+              'เกิดข้อผิดพลาดในการโหลดแผนที่',
               style: TextStyle(
                 color: const Color(0xFF111827),
                 fontSize: AppTextStyles.sectionTitle,
@@ -194,7 +194,7 @@ class _MapViewWidgetState extends State<MapViewWidget> {
             ElevatedButton.icon(
               onPressed: _loadCameras,
               icon: const Icon(Icons.refresh, size: 20),
-              label: Text('Retry',
+              label: Text('ลองใหม่',
                   style: TextStyle(
                       fontSize: AppTextStyles.labelNormal,
                       fontWeight: FontWeight.w600)),
@@ -219,7 +219,7 @@ class _MapViewWidgetState extends State<MapViewWidget> {
             ),
             const SizedBox(height: 20),
             Text(
-              'No Cameras Found',
+              'ไม่พบข้อมูลกล้อง',
               style: TextStyle(
                 color: const Color(0xFF111827),
                 fontSize: AppTextStyles.sectionTitle,
@@ -230,7 +230,7 @@ class _MapViewWidgetState extends State<MapViewWidget> {
             ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 400),
               child: Text(
-                'There are no cameras configured yet. Add cameras to see them on the map.',
+                'ยังไม่ได้ตั้งค่ากล้องในระบบ เพิ่มกล้องเพื่อแสดงบนแผนที่',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: const Color(0xFF6B7280),
@@ -243,7 +243,7 @@ class _MapViewWidgetState extends State<MapViewWidget> {
             ElevatedButton.icon(
               onPressed: _loadCameras,
               icon: const Icon(Icons.refresh, size: 20),
-              label: Text('Refresh',
+              label: Text('รีเฟรช',
                   style: TextStyle(
                       fontSize: AppTextStyles.labelNormal,
                       fontWeight: FontWeight.w600)),

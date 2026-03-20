@@ -1,4 +1,5 @@
 import '/data/services/index.dart';
+import '/core/i18n/i18n.dart';
 import '/utils/flutter_flow_theme.dart';
 import '/utils/flutter_flow_util.dart';
 import 'package:flutter/material.dart';
@@ -77,12 +78,12 @@ class _ManageCategoriesDialogState extends State<ManageCategoriesDialog> {
                 children: [
                   const Icon(Icons.video_library, color: Color(0xFF4B39EF)),
                   const SizedBox(width: 8),
-                  const Text('Manage Categories'),
+                  Text(context.tr('nav.collection', fallback: 'จัดการหมวดหมู่')),
                   const Spacer(),
                   IconButton(
                     icon: const Icon(Icons.add_circle,
                         color: Color(0xFF4B39EF)),
-                    tooltip: 'Create New Category',
+                    tooltip: context.tr('collection.edit.title', fallback: 'สร้างหมวดหมู่ใหม่'),
                     onPressed: () async {
                       await _showCreateDialog(context);
                       _refresh();
@@ -143,7 +144,7 @@ class _ManageCategoriesDialogState extends State<ManageCategoriesDialog> {
                                       IconButton(
                                         icon: Icon(Icons.edit,
                                             color: color.text, size: 20),
-                                        tooltip: 'Edit Name',
+                                        tooltip: context.tr('collection.tooltip.edit_name', fallback: 'แก้ไขชื่อ'),
                                         onPressed: () async {
                                           await _showEditDialog(
                                               context, catId, catName);
@@ -154,7 +155,7 @@ class _ManageCategoriesDialogState extends State<ManageCategoriesDialog> {
                                       IconButton(
                                         icon: const Icon(Icons.delete,
                                             color: Colors.red, size: 20),
-                                        tooltip: 'Delete',
+                                        tooltip: context.tr('common.delete', fallback: 'ลบ'),
                                         onPressed: () async {
                                           await _handleDelete(
                                               context, catId, catName);
@@ -182,7 +183,7 @@ class _ManageCategoriesDialogState extends State<ManageCategoriesDialog> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Close'),
+                  child: Text(context.tr('common.close', fallback: 'ปิด')),
                 ),
               ],
             );
@@ -199,17 +200,17 @@ class _ManageCategoriesDialogState extends State<ManageCategoriesDialog> {
     await showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Row(children: [
+        title: Row(children: [
           Icon(Icons.create_new_folder_outlined, color: Color(0xFF4B39EF)),
           SizedBox(width: 8),
-          Text('Create New Category'),
+          Text(context.tr('collection.edit.title', fallback: 'สร้างหมวดหมู่ใหม่')),
         ]),
         content: TextField(
           controller: ctrl,
           autofocus: true,
           decoration: InputDecoration(
-            labelText: 'Category Name *',
-            hintText: 'e.g., Entrance Cameras',
+            labelText: context.tr('collection.edit.name_label', fallback: 'ชื่อหมวดหมู่ *'),
+            hintText: context.tr('collection.edit.name_label', fallback: 'เช่น กล้องทางเข้า'),
             border:
                 OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
             prefixIcon:
@@ -219,14 +220,14 @@ class _ManageCategoriesDialogState extends State<ManageCategoriesDialog> {
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel')),
+              child: Text(context.tr('common.cancel', fallback: 'ยกเลิก'))),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF4B39EF)),
             onPressed: () async {
               final name = ctrl.text.trim();
               if (name.isEmpty) {
-                _snack(context, 'Please enter a category name',
+                _snack(context, context.tr('collection.edit.name_required', fallback: 'กรุณากรอกชื่อหมวดหมู่'),
                     isError: true);
                 return;
               }
@@ -236,10 +237,12 @@ class _ManageCategoriesDialogState extends State<ManageCategoriesDialog> {
                   await CategoryService().createCategory(name: name);
               if (context.mounted) Navigator.pop(context);
               _snack(context,
-                  res.succeeded ? 'Category "$name" created!' : 'Failed to create',
+                  res.succeeded
+                      ? context.tr('collection.edit.updated_success', fallback: 'สร้างหมวดหมู่ "$name" สำเร็จ')
+                      : context.tr('collection.edit.update_failed', fallback: 'สร้างหมวดหมู่ไม่สำเร็จ'),
                   isError: !res.succeeded);
             },
-            child: const Text('Create',
+            child: Text(context.tr('common.close', fallback: 'สร้าง'),
                 style: TextStyle(color: Colors.white)),
           ),
         ],
@@ -255,24 +258,24 @@ class _ManageCategoriesDialogState extends State<ManageCategoriesDialog> {
     await showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Edit Category'),
+        title: Text(context.tr('collection.edit.title', fallback: 'แก้ไขหมวดหมู่')),
         content: TextField(
           controller: ctrl,
           autofocus: true,
-          decoration: const InputDecoration(
-              labelText: 'Category Name', border: OutlineInputBorder()),
+          decoration: InputDecoration(
+              labelText: context.tr('collection.edit.name_label', fallback: 'ชื่อหมวดหมู่'), border: const OutlineInputBorder()),
         ),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel')),
+              child: Text(context.tr('common.cancel', fallback: 'ยกเลิก'))),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF4B39EF)),
             onPressed: () async {
               final name = ctrl.text.trim();
               if (name.isEmpty) {
-                _snack(context, 'Please enter a name', isError: true);
+                _snack(context, context.tr('collection.edit.name_required', fallback: 'กรุณากรอกชื่อ'), isError: true);
                 return;
               }
               Navigator.pop(ctx);
@@ -281,10 +284,12 @@ class _ManageCategoriesDialogState extends State<ManageCategoriesDialog> {
                   .editCategory(categoryId: catId, name: name);
               if (context.mounted) Navigator.pop(context);
               _snack(context,
-                  res.succeeded ? 'Category updated!' : 'Failed to update',
+                  res.succeeded
+                      ? context.tr('collection.edit.updated_success', fallback: 'อัปเดตหมวดหมู่สำเร็จ')
+                      : context.tr('collection.edit.update_failed', fallback: 'อัปเดตไม่สำเร็จ'),
                   isError: !res.succeeded);
             },
-            child: const Text('Save',
+            child: Text(context.tr('collection.edit.save', fallback: 'บันทึก'),
                 style: TextStyle(color: Colors.white)),
           ),
         ],
@@ -304,7 +309,7 @@ class _ManageCategoriesDialogState extends State<ManageCategoriesDialog> {
     if (context.mounted) Navigator.pop(context);
 
     if (res.succeeded) {
-      _snack(context, 'Category deleted!');
+      _snack(context, context.tr('collection.delete.deleted_success', fallback: 'ลบหมวดหมู่สำเร็จ'));
       return;
     }
 
@@ -312,7 +317,7 @@ class _ManageCategoriesDialogState extends State<ManageCategoriesDialog> {
     final isConflict = res.statusCode == 409 ||
         getJsonField(res.jsonBody, r'$.status') == 409;
     if (!isConflict || !context.mounted) {
-      _snack(context, 'Failed to delete (${res.statusCode})', isError: true);
+      _snack(context, context.tr('collection.delete.delete_failed', params: {'statusCode': '${res.statusCode}'}, fallback: 'ลบไม่สำเร็จ (${res.statusCode})'), isError: true);
       return;
     }
 
@@ -325,7 +330,9 @@ class _ManageCategoriesDialogState extends State<ManageCategoriesDialog> {
     if (context.mounted) Navigator.pop(context);
     _snack(
         context,
-        forceRes.succeeded ? 'Category force deleted!' : 'Force delete failed',
+      forceRes.succeeded
+        ? context.tr('collection.delete.force_deleted_success', fallback: 'ลบแบบบังคับสำเร็จ')
+        : context.tr('collection.delete.force_delete_failed', fallback: 'ลบแบบบังคับไม่สำเร็จ'),
         isError: !forceRes.succeeded);
   }
 
@@ -334,21 +341,21 @@ class _ManageCategoriesDialogState extends State<ManageCategoriesDialog> {
     return showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Row(children: [
+        title: Row(children: [
           Icon(Icons.warning_amber_rounded, color: Colors.red),
           SizedBox(width: 8),
-          Text('Delete Category'),
+          Text(context.tr('collection.delete.title', fallback: 'ลบหมวดหมู่')),
         ]),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Delete "$catName"?'),
+            Text(context.tr('collection.delete.confirm', params: {'name': catName}, fallback: 'ลบ "$catName" ?')),
             const SizedBox(height: 12),
-            const Row(children: [
-              Icon(Icons.info_outline, size: 14, color: Colors.red),
-              SizedBox(width: 4),
-              Text("This action can't be undo",
+            Row(children: [
+              const Icon(Icons.info_outline, size: 14, color: Colors.red),
+              const SizedBox(width: 4),
+              Text(context.tr('collection.delete.undo_warning', fallback: 'การกระทำนี้ไม่สามารถย้อนกลับได้'),
                   style: TextStyle(
                       color: Colors.red,
                       fontSize: 12,
@@ -359,12 +366,12 @@ class _ManageCategoriesDialogState extends State<ManageCategoriesDialog> {
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancel')),
+              child: Text(context.tr('common.cancel', fallback: 'ยกเลิก'))),
           ElevatedButton(
             style:
                 ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete',
+            child: Text(context.tr('common.delete', fallback: 'ลบ'),
                 style: TextStyle(color: Colors.white)),
           ),
         ],
@@ -377,26 +384,26 @@ class _ManageCategoriesDialogState extends State<ManageCategoriesDialog> {
     return showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Row(children: [
+        title: Row(children: [
           Icon(Icons.warning_amber_rounded, color: Colors.orange),
           SizedBox(width: 8),
-          Text('Category in Use'),
+          Text(context.tr('collection.delete.in_use_title', fallback: 'หมวดหมู่กำลังถูกใช้งาน')),
         ]),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('"$catName" is still assigned to one or more cameras.'),
+            Text(context.tr('collection.delete.in_use_message', params: {'name': catName}, fallback: '"$catName" ยังถูกใช้งานโดยกล้องอย่างน้อยหนึ่งตัว')),
             const SizedBox(height: 8),
-            const Text(
-              'Force delete will remove this category from ALL cameras and then delete it.',
+            Text(
+              context.tr('collection.delete.force_delete_message', fallback: 'การลบแบบบังคับจะนำหมวดหมู่นี้ออกจากกล้องทั้งหมดก่อน แล้วจึงลบหมวดหมู่'),
               style: TextStyle(color: Color(0xFF6B7280)),
             ),
             const SizedBox(height: 12),
-            const Row(children: [
-              Icon(Icons.info_outline, size: 14, color: Colors.red),
-              SizedBox(width: 4),
-              Text("This action can't be undo",
+            Row(children: [
+              const Icon(Icons.info_outline, size: 14, color: Colors.red),
+              const SizedBox(width: 4),
+              Text(context.tr('collection.delete.undo_warning', fallback: 'การกระทำนี้ไม่สามารถย้อนกลับได้'),
                   style: TextStyle(
                       color: Colors.red,
                       fontSize: 12,
@@ -407,12 +414,12 @@ class _ManageCategoriesDialogState extends State<ManageCategoriesDialog> {
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancel')),
+              child: Text(context.tr('common.cancel', fallback: 'ยกเลิก'))),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFEF4444)),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Force Delete',
+            child: Text(context.tr('collection.delete.force_delete', fallback: 'ลบแบบบังคับ'),
                 style: TextStyle(color: Colors.white)),
           ),
         ],
@@ -455,11 +462,11 @@ class _EmptyCategoryState extends StatelessWidget {
             size: 64,
             color: FlutterFlowTheme.of(context).secondaryText),
         const SizedBox(height: 16),
-        Text('No categories yet',
+        Text('ยังไม่มีหมวดหมู่',
             style: FlutterFlowTheme.of(context).titleMedium),
         const SizedBox(height: 8),
         Text(
-          'Click the + icon above to create your first category',
+          'กดปุ่ม + ด้านบนเพื่อสร้างหมวดหมู่แรก',
           style: FlutterFlowTheme.of(context).bodySmall,
           textAlign: TextAlign.center,
         ),
@@ -507,7 +514,7 @@ class _CategoryCamerasPanel extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Cameras (${cameras.length})',
+                'กล้อง (${cameras.length})',
                 style: FlutterFlowTheme.of(context)
                     .labelLarge
                     .override(
@@ -520,7 +527,7 @@ class _CategoryCamerasPanel extends StatelessWidget {
                   onChanged();
                 },
                 icon: const Icon(Icons.add, size: 16),
-                label: const Text('Add Camera'),
+                label: const Text('เพิ่มกล้อง'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF39D2C0),
                   foregroundColor: Colors.white,
@@ -538,7 +545,7 @@ class _CategoryCamerasPanel extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               child: Center(
                 child: Text(
-                  'No cameras in this category',
+                  'ไม่มีข้อมูลกล้องในหมวดหมู่นี้',
                   style: FlutterFlowTheme.of(context)
                       .bodySmall
                       .override(
@@ -568,7 +575,7 @@ class _CategoryCamerasPanel extends StatelessWidget {
 
     if (available.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('All cameras are already in this category'),
+        content: Text('กล้องทั้งหมดถูกเพิ่มในหมวดหมู่นี้แล้ว'),
         backgroundColor: Color(0xFFFFA726),
       ));
       return;
@@ -616,23 +623,23 @@ class _CameraListTile extends StatelessWidget {
           style: FlutterFlowTheme.of(context).bodyMedium),
       trailing: IconButton(
         icon: const Icon(Icons.remove_circle, color: Colors.red, size: 20),
-        tooltip: 'Remove',
+        tooltip: 'นำออก',
         onPressed: () async {
           final confirm = await showDialog<bool>(
             context: context,
             builder: (ctx) => AlertDialog(
-              title: const Text('Remove Camera'),
+              title: const Text('นำกล้องออก'),
               content: Text(
-                  'Remove "$cameraName" from "$categoryName"?'),
+                  'นำ "$cameraName" ออกจาก "$categoryName" ?'),
               actions: [
                 TextButton(
                     onPressed: () => Navigator.pop(ctx, false),
-                    child: const Text('Cancel')),
+                    child: const Text('ยกเลิก')),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red),
                   onPressed: () => Navigator.pop(ctx, true),
-                  child: const Text('Remove',
+                  child: const Text('นำออก',
                       style: TextStyle(color: Colors.white)),
                 ),
               ],
@@ -671,7 +678,7 @@ class _CameraListTile extends StatelessWidget {
 
       sm.showSnackBar(SnackBar(
         content: Text(
-            res.succeeded ? 'Camera removed!' : 'Failed to remove camera'),
+          res.succeeded ? 'นำกล้องออกสำเร็จ' : 'นำกล้องออกไม่สำเร็จ'),
         backgroundColor:
             res.succeeded ? const Color(0xFF4CAF50) : Colors.red,
       ));
@@ -680,7 +687,7 @@ class _CameraListTile extends StatelessWidget {
     } catch (e) {
       if (loaderShown && navigator.canPop()) navigator.pop();
       sm.showSnackBar(SnackBar(
-        content: Text('Error: $e'),
+        content: Text('เกิดข้อผิดพลาด: $e'),
         backgroundColor: Colors.red,
       ));
     }
@@ -721,7 +728,7 @@ class _AddCameraDialogState extends State<_AddCameraDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text('Add Cameras to "${widget.categoryName}"'),
+      title: Text('เพิ่มกล้องใน "${widget.categoryName}"'),
       content: SizedBox(
         width: 500,
         height: 400,
@@ -731,7 +738,7 @@ class _AddCameraDialogState extends State<_AddCameraDialog> {
             TextField(
               decoration: InputDecoration(
                 prefixIcon: const Icon(Icons.search),
-                hintText: 'Search cameras...',
+                hintText: 'ค้นหากล้อง...',
                 border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8)),
                 contentPadding: const EdgeInsets.symmetric(
@@ -742,7 +749,7 @@ class _AddCameraDialogState extends State<_AddCameraDialog> {
             const SizedBox(height: 16),
             Align(
               alignment: Alignment.centerLeft,
-              child: Text('${_filtered.length} camera(s) available',
+              child: Text('พบ ${_filtered.length} กล้อง',
                   style: TextStyle(
                       fontSize: AppTextStyles.commandBody,
                       color: Colors.grey[600])),
@@ -753,7 +760,7 @@ class _AddCameraDialogState extends State<_AddCameraDialog> {
             Expanded(
               child: _filtered.isEmpty
                   ? const Center(
-                      child: Text('No cameras found',
+                    child: Text('ไม่พบข้อมูลกล้อง',
                           style: TextStyle(color: Colors.grey)))
                   : ListView.builder(
                       itemCount: _filtered.length,
@@ -785,7 +792,7 @@ class _AddCameraDialogState extends State<_AddCameraDialog> {
       actions: [
         TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Close')),
+        child: const Text('ปิด')),
       ],
     );
   }
@@ -816,7 +823,7 @@ class _AddCameraDialogState extends State<_AddCameraDialog> {
 
       sm.showSnackBar(SnackBar(
         content:
-            Text(res.succeeded ? 'Camera added!' : 'Failed to add camera'),
+          Text(res.succeeded ? 'เพิ่มกล้องสำเร็จ' : 'เพิ่มกล้องไม่สำเร็จ'),
         backgroundColor:
             res.succeeded ? const Color(0xFF4CAF50) : Colors.red,
       ));
@@ -825,7 +832,7 @@ class _AddCameraDialogState extends State<_AddCameraDialog> {
     } catch (e) {
       if (loaderShown && navigator.canPop()) navigator.pop();
       sm.showSnackBar(SnackBar(
-        content: Text('Error: $e'),
+        content: Text('เกิดข้อผิดพลาด: $e'),
         backgroundColor: Colors.red,
       ));
     }

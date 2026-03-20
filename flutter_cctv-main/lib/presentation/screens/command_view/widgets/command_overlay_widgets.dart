@@ -77,8 +77,8 @@ class _AccidentOverlayState extends State<AccidentOverlay>
                     const Icon(Icons.warning_amber_rounded,
                         color: Colors.white, size: 10),
                     const SizedBox(width: 3),
-                    Text(
-                      'ACCIDENT  ${_formatTs(widget.timestamp)}',
+                                    Text(
+                                      'อุบัติเหตุ  ${_formatTs(widget.timestamp)}',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 8,
@@ -133,7 +133,7 @@ class AccidentDialog extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Accident Detected — ${camera.name}',
+                    'ตรวจพบอุบัติเหตุ - ${camera.name}',
                     style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -184,7 +184,7 @@ class AccidentDialog extends StatelessWidget {
               padding:
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Text(
-                'Detected at: $timestamp',
+                'ตรวจพบเมื่อ: $timestamp',
                 style: const TextStyle(color: Colors.white54, fontSize: 12),
                 textAlign: TextAlign.center,
               ),
@@ -201,7 +201,7 @@ class AccidentDialog extends StatelessWidget {
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8)),
               ),
-              child: const Text('Dismiss'),
+              child: const Text('ปิด'),
             ),
           ),
         ],
@@ -257,17 +257,17 @@ class FocusOverlay extends StatelessWidget {
                           ),
                           const SizedBox(height: 12),
                           Text(
-                            snap.data?.error ?? 'Stream unavailable',
+                            snap.data?.error ?? 'สตรีมไม่พร้อมใช้งาน',
                             style: const TextStyle(
                                 color: Colors.white60, fontSize: 14),
                             textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 16),
-                          const Text(
-                            'Double-tap to exit',
-                            style: TextStyle(
-                                color: Colors.white30, fontSize: 11),
-                          ),
+                              const Text(
+                                'แตะสองครั้งเพื่อออกจากโหมดเต็มจอ',
+                                style: TextStyle(
+                                    color: Colors.white30, fontSize: 11),
+                              ),
                         ],
                       ),
                     );
@@ -337,7 +337,7 @@ class FocusOverlay extends StatelessWidget {
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: const Text(
-                    'Double-tap stream · tap ✕ to exit',
+                    'แตะสองครั้งเพื่อขยาย · แตะ ✕ เพื่อออก',
                     style:
                         TextStyle(color: Colors.white70, fontSize: 11),
                   ),
@@ -375,16 +375,16 @@ class EditModeBanner extends StatelessWidget {
           child: const Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.touch_app, color: Colors.white, size: 14),
-              SizedBox(width: 6),
-              Text(
-                'Tap to select · tap another to swap',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+                  const Icon(Icons.touch_app, color: Colors.white, size: 14),
+                  const SizedBox(width: 6),
+                  Text(
+                    'แตะเพื่อเลือก · แตะอีกช่องเพื่อสลับตำแหน่ง',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
             ],
           ),
         ),

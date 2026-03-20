@@ -92,7 +92,7 @@ class EditableTile extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: const Text(
-                                  'SELECTED - Click another to swap',
+                                  'เลือกแล้ว - แตะอีกช่องเพื่อสลับ',
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontSize: 10,

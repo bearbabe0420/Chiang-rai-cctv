@@ -1,4 +1,5 @@
 import 'category_chip.dart';
+import '/core/i18n/i18n.dart';
 import '/utils/flutter_flow_theme.dart';
 import '/utils/flutter_flow_util.dart';
 import 'package:flutter/material.dart';
@@ -37,7 +38,9 @@ class StatusBadge extends StatelessWidget {
           ),
           const SizedBox(width: 6),
           Text(
-            isOnline ? 'Online' : 'Offline',
+            isOnline
+                ? context.tr('camera_list.online', fallback: 'ออนไลน์')
+                : context.tr('camera_list.offline', fallback: 'ออฟไลน์'),
             style: TextStyle(
               color: isOnline
                   ? const Color(0xFF15803D)
@@ -107,8 +110,8 @@ class CollectionEmptyState extends StatelessWidget {
           const SizedBox(height: 16.0),
           Text(
             searchText.isNotEmpty
-                ? 'No cameras found matching "$searchText"'
-                : 'No cameras available',
+                ? 'ไม่พบกล้องที่ตรงกับ "$searchText"'
+                : 'ไม่พบข้อมูลกล้อง',
             style: FlutterFlowTheme.of(context).titleMedium,
             textAlign: TextAlign.center,
           ),

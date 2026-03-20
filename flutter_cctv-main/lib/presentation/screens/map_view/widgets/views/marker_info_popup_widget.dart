@@ -63,7 +63,7 @@ class _MarkerInfoPopupWidgetState extends State<MarkerInfoPopupWidget> {
   Widget build(BuildContext context) {
     final isOnline = widget.cameraData?['status']?.toString().toLowerCase() == 'online';
     final statusColor = isOnline ? Color(0xFF10B981) : Color(0xFFEF4444);
-    final statusText = isOnline ? 'Online' : 'Offline';
+    final statusText = isOnline ? 'ออนไลน์' : 'ออฟไลน์';
     final cameraId = widget.cameraData?['id']?.toString() ?? '';
     final categories = widget.cameraData?['categories'] as List<dynamic>?;
     final lastSeen = _parseLastSeen(widget.cameraData?['lastSeen']);
@@ -145,7 +145,7 @@ class _MarkerInfoPopupWidgetState extends State<MarkerInfoPopupWidget> {
                                         Text(
                                           valueOrDefault<String>(
                                             widget.cameraData?['name'],
-                                            'Camera',
+                                            'กล้อง',
                                           ),
                                           style: TextStyle(
                                             color: Colors.white,
@@ -298,7 +298,7 @@ class _MarkerInfoPopupWidgetState extends State<MarkerInfoPopupWidget> {
                         children: [
                           // Section title
                           Text(
-                            'CAMERA DETAILS',
+                            'รายละเอียดกล้อง',
                             style: TextStyle(
                               fontSize: AppTextStyles.commandSmall,
                               fontWeight: FontWeight.bold,
@@ -313,7 +313,7 @@ class _MarkerInfoPopupWidgetState extends State<MarkerInfoPopupWidget> {
                               widget.cameraData!['address'].toString().isNotEmpty)
                             _buildPremiumInfoCard(
                               Icons.location_on_rounded,
-                              'Location',
+                              'ตำแหน่ง',
                               widget.cameraData!['address'].toString(),
                               Color(0xFFEF4444),
                             ),
@@ -324,7 +324,7 @@ class _MarkerInfoPopupWidgetState extends State<MarkerInfoPopupWidget> {
                           if (widget.cameraData?['latLong'] != null)
                             _buildPremiumInfoCard(
                               Icons.my_location_rounded,
-                              'Coordinates',
+                              'พิกัด',
                               widget.cameraData!['latLong'].toString(),
                               Color(0xFF3B82F6),
                             ),
@@ -336,7 +336,7 @@ class _MarkerInfoPopupWidgetState extends State<MarkerInfoPopupWidget> {
                               widget.cameraData!['rtspUrl'].toString().isNotEmpty)
                             _buildPremiumInfoCard(
                               Icons.link_rounded,
-                              'Stream URL',
+                              'ลิงก์สตรีม',
                               widget.cameraData!['rtspUrl'].toString(),
                               Color(0xFF8B5CF6),
                               isMonospace: true,
@@ -407,7 +407,7 @@ class _MarkerInfoPopupWidgetState extends State<MarkerInfoPopupWidget> {
                                         ),
                                         SizedBox(width: 8),
                                         Text(
-                                          isOnline ? 'View Live Feed' : 'Camera Offline',
+                                          isOnline ? 'ดูภาพสด' : 'กล้องออฟไลน์',
                                           style: TextStyle(
                                             fontSize: AppTextStyles.labelNormal,
                                             fontWeight: FontWeight.bold,
@@ -449,7 +449,7 @@ class _MarkerInfoPopupWidgetState extends State<MarkerInfoPopupWidget> {
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            'This camera is currently offline and unavailable for viewing',
+                                            'กล้องนี้ออฟไลน์อยู่ จึงยังไม่สามารถรับชมได้',
                                             style: TextStyle(
                                               color: Color(0xFFDC2626),
                                               fontSize: AppTextStyles.commandBody,
@@ -459,7 +459,7 @@ class _MarkerInfoPopupWidgetState extends State<MarkerInfoPopupWidget> {
                                           if (lastSeen != null) ...[
                                             SizedBox(height: 4),
                                             Text(
-                                              'Last seen ${TimeAgoFormatter.format(lastSeen)}',
+                                              'ออนไลน์ล่าสุด ${TimeAgoFormatter.format(lastSeen)}',
                                               style: TextStyle(
                                                 color: const Color(0xFFB91C1C),
                                                 fontSize: AppTextStyles.commandBody,
@@ -556,7 +556,7 @@ class _MarkerInfoPopupWidgetState extends State<MarkerInfoPopupWidget> {
                           // Copy to clipboard functionality
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text('Copied to clipboard'),
+                              content: Text('คัดลอกไปยังคลิปบอร์ดแล้ว'),
                               duration: Duration(seconds: 2),
                               behavior: SnackBarBehavior.floating,
                             ),

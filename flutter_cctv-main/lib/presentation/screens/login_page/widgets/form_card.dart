@@ -2,6 +2,7 @@ import 'package:central_command/utils/app_text_styles.dart';
 
 import '/utils/flutter_flow/theme.dart';
 import '/utils/flutter_flow/widgets.dart';
+import '/core/i18n/i18n.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:central_command/presentation/screens/login_page/login_page_model.dart';
@@ -50,7 +51,7 @@ class LoginFormCard extends StatelessWidget {
               children: [
                 // Title
                 Text(
-                  'Welcome Back',
+                  context.tr('login.welcome_back'),
                   textAlign: TextAlign.center,
                   style: FlutterFlowTheme.of(context).displaySmall.override(
                         font: GoogleFonts.plusJakartaSans(
@@ -67,7 +68,7 @@ class LoginFormCard extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsetsDirectional.fromSTEB(0.0, 12.0, 0.0, 24.0),
                   child: Text(
-                    'Fill out the information below in order to access your account.',
+                    context.tr('login.subtitle'),
                     textAlign: TextAlign.center,
                     style: FlutterFlowTheme.of(context).labelMedium.override(
                           font: GoogleFonts.plusJakartaSans(
@@ -118,7 +119,9 @@ class LoginFormCard extends StatelessWidget {
                   padding: const EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 16.0),
                   child: FFButtonWidget(
                     onPressed: model.isLoading ? null : onLogin,
-                    text: model.isLoading ? 'Loading...' : 'Log In',
+                    text: model.isLoading
+                        ? context.tr('login.loading')
+                        : context.tr('login.login'),
                     options: FFButtonOptions(
                       width: double.infinity,
                       height: 44.0,

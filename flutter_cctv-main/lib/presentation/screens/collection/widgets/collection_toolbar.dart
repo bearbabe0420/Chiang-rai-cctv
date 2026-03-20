@@ -1,6 +1,7 @@
 import '/utils/flutter_flow_theme.dart';
 import '/utils/flutter_flow_icon_button.dart';
 import '/utils/flutter_flow_widgets.dart';
+import '/core/i18n/i18n.dart';
 import 'package:flutter/material.dart';
 
 /// Toolbar: SearchBar + Refresh + Manage Categories
@@ -36,7 +37,7 @@ class CollectionToolbar extends StatelessWidget {
               focusNode: focusNode,
               onChanged: onSearchChanged,
               decoration: InputDecoration(
-                hintText: 'Search cameras...',
+                hintText: context.tr('collection.search_hint'),
                 hintStyle: const TextStyle(
                     color: Color(0xFF9CA3AF), fontSize: 14),
                 prefixIcon: const Icon(Icons.search,
@@ -86,7 +87,7 @@ class CollectionToolbar extends StatelessWidget {
         // ── Manage Categories ──────────────────────────────────────────────
         FFButtonWidget(
           onPressed: onManageCategories,
-          text: 'Manage Categories',
+          text: context.tr('nav.collection'),
           icon: const Icon(Icons.settings, size: 22.0, color: Colors.white),
           options: FFButtonOptions(
             height: 50.0,

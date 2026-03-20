@@ -6,6 +6,7 @@ import '/presentation/screens/list_camera_page/widgets/views/addnewcamera_widget
 import '/presentation/screens/list_camera_page/widgets/views/detailscamera_widget.dart';
 import '/presentation/screens/list_camera_page/widgets/views/editdatacamera_widget.dart';
 import '/presentation/widgets/nav/views/nav_bar_main_widget.dart';
+import '/core/i18n/i18n.dart';
 import '../collection/widgets/category_chip.dart';
 import 'widgets/status_chip.dart';
 import '/utils/flutter_flow/theme.dart';
@@ -155,21 +156,30 @@ class _ListCameraPageWidgetState extends State<ListCameraPageWidget> {
   // ---------------------------------------------------------------------------
 
   Future<void> _confirmDelete(BuildContext context, dynamic item) async {
-    final name = getJsonField(item, r'$.name')?.toString() ?? 'this camera';
+    final name =
+        getJsonField(item, r'$.name')?.toString() ?? context.tr('camera_list.title');
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Confirm Deletion'),
-        content: Text('Are you sure you want to delete "$name"?'),
+        title: Text(context.tr('camera_list.confirm_delete_title')),
+        content: Text(
+          context.tr(
+            'camera_list.confirm_delete_message',
+            params: {'name': name},
+          ),
+        ),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancel')),
+              child: Text(context.tr('common.cancel'))),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFEF4444)),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete', style: TextStyle(color: Colors.white)),
+            child: Text(
+              context.tr('common.delete'),
+              style: const TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -185,8 +195,10 @@ class _ListCameraPageWidgetState extends State<ListCameraPageWidget> {
 
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(response.succeeded
-          ? 'Deleted "$name" successfully'
-          : 'Failed to delete: ${response.statusCode}'),
+          ? context.tr('camera_list.deleted_success', params: {'name': name})
+          : context.tr('camera_list.deleted_failed', params: {
+              'statusCode': '${response.statusCode}'
+            })),
       backgroundColor: response.succeeded
           ? const Color(0xFF16A34A)
           : const Color(0xFFEF4444),
@@ -231,7 +243,7 @@ class _ListCameraPageWidgetState extends State<ListCameraPageWidget> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'List Cameras',
+                  context.tr('camera_list.title'),
                   style: FlutterFlowTheme.of(context).headlineLarge.override(
                         fontFamily: FlutterFlowTheme.of(context)
                             .headlineLargeFamily,
@@ -279,8 +291,13 @@ class _ListCameraPageWidgetState extends State<ListCameraPageWidget> {
   // ---------------------------------------------------------------------------
 
   Widget _buildDataTable(BuildContext context) {
-    const columns = [
-      'Name', 'LatLong', 'Address', 'Status', 'Category', 'Action'
+    final columns = [
+      context.tr('camera_list.columns.name'),
+      context.tr('camera_list.columns.latlong'),
+      context.tr('camera_list.columns.address'),
+      context.tr('camera_list.columns.status'),
+      context.tr('camera_list.columns.category'),
+      context.tr('camera_list.columns.action'),
     ];
     const columnWidths = <int, TableColumnWidth>{
       0: FlexColumnWidth(2),
@@ -383,7 +400,7 @@ class _ListCameraPageWidgetState extends State<ListCameraPageWidget> {
                       children: [
                         ActionBtn(
                           icon: Icons.remove_red_eye_outlined,
-                          tooltip: 'View details',
+                          tooltip: context.tr('camera_list.tooltip.view_details'),
                           color: FlutterFlowTheme.of(context).primary,
                           onPressed: () => showDialog(
                             context: context,
@@ -393,7 +410,7 @@ class _ListCameraPageWidgetState extends State<ListCameraPageWidget> {
                         ),
                         ActionBtn(
                           icon: Icons.edit_outlined,
-                          tooltip: 'Edit',
+                          tooltip: context.tr('camera_list.tooltip.edit'),
                           color: const Color(0xFFF59E0B),
                           onPressed: () async {
                             final result = await showDialog<bool>(
@@ -413,7 +430,7 @@ class _ListCameraPageWidgetState extends State<ListCameraPageWidget> {
                         ),
                         ActionBtn(
                           icon: Icons.delete_outline,
-                          tooltip: 'Delete',
+                          tooltip: context.tr('camera_list.tooltip.delete'),
                           color: const Color(0xFFEF4444),
                           onPressed: () => _confirmDelete(context, item),
                         ),
