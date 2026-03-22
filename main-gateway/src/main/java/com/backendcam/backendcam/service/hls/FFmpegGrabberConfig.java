@@ -99,8 +99,10 @@ public class FFmpegGrabberConfig {
      *
      * @param rtspUrl    RTSP source URL
      * @param streamName for logging
-     * @param context    stream context (checked for shouldStop, grabber reference stored here)
-     * @return a started FFmpegFrameGrabber with valid width/height, configured for HD
+     * @param context    stream context (checked for shouldStop, grabber reference
+     *                   stored here)
+     * @return a started FFmpegFrameGrabber with valid width/height, configured for
+     *         HD
      * @throws Exception if all retries exhausted or interrupted
      */
     public FFmpegFrameGrabber startGrabberWithRetryHD(String rtspUrl, String streamName,
@@ -275,30 +277,44 @@ public class FFmpegGrabberConfig {
         grabber.setFormat("rtsp");
         grabber.setImageMode(ImageMode.COLOR);
 
-        // HD requires larger probe settings for proper codec detection
-        // Especially important for high-bitrate HEVC/H.265 streams
-        grabber.setOption("analyzeduration", "2000000"); // 2 seconds - reduced for faster startup
-        grabber.setOption("probesize", "10000000"); // 10MB - balanced for HD detection
-        grabber.setOption("max_delay", "500000"); // 500ms max delay
-        grabber.setOption("reorder_queue_size", "0"); // No reordering for lower latency
+        // ─── FIX 3: Hardware H.265 decode via NVDEC/CUVID ────────────────
+        // This offloads H.265 decode from CPU to the GPU's NVDEC unit
+        //grabber.setOption("hwaccel", "cuda");
+        //grabber.setOption("c:v", "hevc_cuvid"); // use NVDEC for H.265
+        //grabber.setOption("hwaccel_output_format", "nv12"); // keep decoded frames in GPU-friendly format
 
-        // Flags configuration for HD streaming with minimum buffering igndts+ +flush_packets+nobuffer
-        grabber.setOption("fflags", "+discardcorrupt+igndts+genpts+flush_packets");
+        // If your camera sends H.264, swap hevc_cuvid → h264_cuvid
+        // For unknown codecs, set hwaccel=auto instead:
+        // grabber.setOption("hwaccel", "auto");
+
+        // Probe — reduced for HD, NVDEC is faster to detect codec params
+        grabber.setOption("analyzeduration", "5000000"); // 5 sec
+        grabber.setOption("probesize", "5000000"); // 5 MB — reduced from 10 MB
+        grabber.setOption("max_delay", "500000");
+        grabber.setOption("reorder_queue_size", "0");
+
+        // ─── FIX 4: Better fflags for 4K/HEVC ────────────────────────────
+        // Remove +nobuffer — it breaks HEVC GOP alignment on high-bitrate cameras
+        // This was causing incomplete frames at 4K and the null frame bursts you see
+        grabber.setOption("fflags", "+discardcorrupt+igndts+genpts");
         grabber.setOption("flags", "low_delay");
 
-        // RTSP specific settings
         grabber.setOption("rtsp_transport", "tcp");
         grabber.setOption("rtsp_flags", "prefer_tcp");
+        grabber.setOption("timeout", "0"); // no idle timeout
+        grabber.setOption("tcp_nodelay", "1"); // disable Nagle — send keepalives immediately
+        grabber.setOption("recv_buffer_size", "0"); // let OS manage buffer size
 
-        grabber.setOption("stimeout", "15000000"); // 10 sec socket timeout for HD streams
-        grabber.setOption("rw_timeout", "15000000"); // 10 sec read/write timeout for HD streams
+        // Longer socket timeout for 4K (more data per packet burst)
+        grabber.setOption("stimeout", "15000000");
+        grabber.setOption("rw_timeout", "15000000");
 
         grabber.setOption("allowed_media_types", "video");
         grabber.setOption("use_wallclock_as_timestamps", "1");
 
-        // Reduced buffer size for lower latency
-        grabber.setOption("buffer_size", "67108864"); 
-        
+        // Larger network buffer for 4K bitrates (20+ Mbps from camera)
+        grabber.setOption("buffer_size", "8388608"); // 8 MB — reduces packet loss on burst
+
         grabber.setOption("err_detect", "ignore_err");
 
         grabber.start();

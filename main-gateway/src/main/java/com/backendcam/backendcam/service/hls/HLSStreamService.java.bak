@@ -2,8 +2,9 @@ package com.backendcam.backendcam.service.hls;
 
 import java.io.File;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import org.bytedeco.ffmpeg.global.avutil;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.FFmpegFrameRecorder;
@@ -13,9 +14,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.backendcam.backendcam.model.entity.Camera;
+import com.backendcam.backendcam.repository.CameraRepository;
+
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
-import java.util.concurrent.TimeUnit;
 
 @Service
 public class HLSStreamService {
@@ -23,15 +26,24 @@ public class HLSStreamService {
     private static final Logger logger = LoggerFactory.getLogger(HLSStreamService.class);
     private static final int MAX_RECONNECT_ATTEMPTS = 10;
     private static final int RECONNECT_DELAY_MS = 3000;
-    private static final int MAX_NULL_FRAMES = 100; // Max consecutive null frames before reconnect
-    private static final int MAX_DIMENSION_RETRIES = 5; // Retries for getting valid resolution
-    private static final int DIMENSION_RETRY_DELAY_MS = 1000;
+    private static final int MAX_NULL_FRAMES = 300;
+    private static final int MAX_FULL_RESTARTS = 5; // Full pipeline restart attempts
+    private static final long FULL_RESTART_DELAY_MS = 5000; // Delay before full restart
 
     private final Map<String, Thread> streamThreads = new ConcurrentHashMap<>();
     private final Map<String, StreamContext> streamContexts = new ConcurrentHashMap<>();
+    // private final Map<String, MotionOrchestratorService> motionOrchestrators =
+    // new ConcurrentHashMap<>();
+
+    @Autowired
+    private CameraRepository cameraRepository;
 
     @Autowired
     private FFmpegGrabberConfig grabberConfig;
+    /*
+     * @Autowired
+     * private SaveMotionFrameService saveMotionFrameService;
+     */
 
     @Autowired
     private FFmpegRecorderConfig recorderConfig;
@@ -44,18 +56,14 @@ public class HLSStreamService {
     public void init() {
         resourceManager.cleanupAllStreams();
     }
-    
+
     /**
      * Gracefully shutdown all streams when application stops
-     * Prevents thread and memory leaks
      */
     @PreDestroy
     public void shutdown() {
         logger.info("Shutting down HLSStreamService - stopping all streams...");
-        
-        // Copy keys to avoid ConcurrentModificationException
         String[] streamNames = streamThreads.keySet().toArray(new String[0]);
-        
         for (String streamName : streamNames) {
             try {
                 stopHLSStream(streamName);
@@ -63,13 +71,13 @@ public class HLSStreamService {
                 logger.error("Error stopping stream {} during shutdown: {}", streamName, e.getMessage());
             }
         }
-        
         logger.info("HLSStreamService shutdown complete");
     }
 
-    public String startHLSStream(String RTSPUrl, String streamName) {
+    // ─── Main entry point ─────────────────────────────────────────────
 
-        // Check if stream already exists
+    public synchronized String startHLSStream(String RTSPUrl, String streamName) {
+
         if (streamThreads.containsKey(streamName)) {
             return "/api/hls/" + streamName + "/stream.m3u8";
         }
@@ -80,149 +88,708 @@ public class HLSStreamService {
         }
 
         StreamContext context = new StreamContext();
+        // Use AtomicReference so the reconnect loop can update the URL with a fresh one
+        // from Firebase
+        AtomicReference<String> currentRtspUrl = new AtomicReference<>(RTSPUrl);
+
+        // Create a dedicated motion orchestrator for this stream
+        /*
+         * MotionOrchestratorService orchestrator = new
+         * MotionOrchestratorService(saveMotionFrameService);
+         * motionOrchestrators.put(streamName, orchestrator);
+         */
 
         Thread thread = new Thread(() -> {
-            avutil.av_log_set_level(avutil.AV_LOG_ERROR); // Reduce FFmpeg log noise - only show errors
-            FFmpegFrameGrabber grabber = null;
-            FFmpegFrameRecorder recorder = null;
+            String hlsOutput = outputDir.getAbsolutePath().replace('\\', '/') + "/stream.m3u8";
+            int fullRestartCount = 0;
 
-            try {
-                // Normalize path to forward slashes for FFmpeg
-                String hlsOutput = outputDir.getAbsolutePath().replace('\\', '/') + "/stream.m3u8";
+            // ── Outer loop: full pipeline restart on fatal errors ──
+            while (!Thread.currentThread().isInterrupted() && !context.shouldStop
+                    && fullRestartCount <= MAX_FULL_RESTARTS) {
 
-                grabber = new FFmpegFrameGrabber(RTSPUrl);
-                context.grabber = grabber;
+                FFmpegFrameGrabber grabber = null;
+                FFmpegFrameRecorder recorder = null;
 
-                // Use configuration class for grabber setup
-                grabberConfig.configureGrabber(grabber);
+                try {
+                    // Phase 1 — Init grabber (with retries, dimension detection)
+                    // SD Configuration (Standard Definition)
+                    // grabber = grabberConfig.startGrabberWithRetry(currentRtspUrl.get(),
+                    // streamName, context);
 
-                // Retry to get valid dimensions - HEVC cameras may need time to detect resolution
-                int width = grabber.getImageWidth();
-                int height = grabber.getImageHeight();
-                
-                for (int retry = 0; retry < MAX_DIMENSION_RETRIES && (width <= 0 || height <= 0); retry++) {
-                    logger.warn("Stream {} - Got invalid dimensions {}x{}, retrying {}/{}...", 
-                        streamName, width, height, retry + 1, MAX_DIMENSION_RETRIES);
-                    
-                    // Grab a few frames to force codec detection
-                    for (int i = 0; i < 30; i++) {
-                        Frame probeFrame = grabber.grabImage();
-                        if (probeFrame != null) {
-                            probeFrame.close();
-                        }
+                    // HD Configuration (High Definition - 720p/1080p)
+                    grabber = grabberConfig.startGrabberWithRetryHD(currentRtspUrl.get(), streamName, context);
+
+                    int width = grabber.getImageWidth();
+                    int height = grabber.getImageHeight();
+
+                    // orchestrator.init(width, height);
+
+                    // Phase 2 — Init recorder (with retries)
+                    // SD Configuration (Standard Definition)
+                    // recorder = recorderConfig.startRecorderWithRetry(hlsOutput, outputDir, width,
+                    // height, streamName, context);
+
+                    // HD Configuration (High Definition - 720p/1080p)
+                    recorder = recorderConfig.startRecorderWithRetryHD(hlsOutput, outputDir, width, height, streamName,
+                            context);
+
+                    // Replace the 5-frame flush block with this:
+                    logger.info("Stream {} - Flushing stale grabber buffer...", streamName);
+                    int flushed = 0;
+                    // For 4K HEVC: flush at least 1 full GOP (fps × hlsTime = 15 × 2 = 30 frames)
+                    // Using 45 frames as safe margin to clear any partial GOP from startup
+                    int flushTarget = 45;
+                    for (int i = 0; i < flushTarget; i++) {
+                        if (Thread.currentThread().isInterrupted() || context.shouldStop)
+                            break;
+                        Frame stale = grabber.grabImage();
+                        if (stale == null)
+                            break;
+                        stale.close();
+                        flushed++;
                     }
-                    
-                    width = grabber.getImageWidth();
-                    height = grabber.getImageHeight();
-                    
-                    if (width <= 0 || height <= 0) {
-                        Thread.sleep(DIMENSION_RETRY_DELAY_MS);
+                    logger.info("Stream {} - Flushed {} stale frames", streamName, flushed);
+                    if (flushed == 0) {
+                        logger.warn("Stream {} - Grabber connected but no frames received, camera may be idle",
+                                streamName);
+                        // Don't proceed to the frame loop — let it fall to finally and restart
+                        throw new RuntimeException("Camera connected but sent 0 frames during flush");
                     }
-                }
-                
-                if (width <= 0 || height <= 0) {
-                    logger.error("Stream {} - Failed to detect valid dimensions after {} retries. Got {}x{}. Aborting.", 
-                        streamName, MAX_DIMENSION_RETRIES, width, height);
-                    return; // Exit thread - finally block will clean up
-                }
-                
-                logger.info("Stream {} - Detected resolution: {}x{}", streamName, width, height);
 
-                recorder = new FFmpegFrameRecorder(hlsOutput, width, height, 0);
-                context.recorder = recorder;
+                    // Phase 3 — Frame streaming loop
+                    int nullFrameCount = 0;
+                    int reconnectAttempts = 0;
+                    long frameCount = 0;
+                    long lastLogTime = System.currentTimeMillis();
+                    // After flush, before the frame loop
+                    int reportedFps = (int) grabber.getFrameRate();
+                    if (reportedFps <= 0)
+                        reportedFps = 15;
+                    long adaptiveSleepMs = 1000 / reportedFps;
+                    long lastFrameTime = System.currentTimeMillis();
+                    int consecutiveNulls = 0;
 
-                // Use configuration class for recorder setup
-                recorderConfig.configureRecorder(recorder, outputDir);
+                    logger.info("Stream {} - Starting adaptive pacing: {}ms ({}fps reported)",
+                            streamName, adaptiveSleepMs, reportedFps);
+                    while (!Thread.currentThread().isInterrupted() && !context.shouldStop) {
+                        try {
+                            Frame frame = grabber.grabImage();
+                            // Thread.sleep(frameSleepMs);
 
-                Frame frame;
-                int nullFrameCount = 0;
-                int reconnectAttempts = 0;
-                long frameCount = 0;        
-                long lastLogTime = System.currentTimeMillis();  
-                
-                // Main streaming loop with reconnection support for 24/7 operation
-                while (!Thread.currentThread().isInterrupted() && !context.shouldStop) {
-                    try {
-                        frame = grabber.grabImage();
-                        
-                        if (frame == null) {
-                            nullFrameCount++;
-                            
-                            if (nullFrameCount >= MAX_NULL_FRAMES) {
-                                logger.warn("Stream {} - {} consecutive null frames, attempting reconnect...", 
-                                    streamName, nullFrameCount);
-                                
-                                // Attempt reconnection
-                                if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
-                                    reconnectAttempts++;
-                                    logger.info("Stream {} - Reconnect attempt {}/{}", 
-                                        streamName, reconnectAttempts, MAX_RECONNECT_ATTEMPTS);
-                                    
-                                    // Stop, release, and create fresh grabber to prevent native memory leak
-                                    try {
-                                        grabber.stop();
-                                        grabber.release();
-                                        Thread.sleep(RECONNECT_DELAY_MS);
-                                        
-                                        // Create a fresh grabber to avoid stale native state
-                                        grabber = new FFmpegFrameGrabber(RTSPUrl);
-                                        context.grabber = grabber;
-                                        grabberConfig.configureGrabber(grabber);
-                                        nullFrameCount = 0;
-                                        logger.info("Stream {} - Reconnected successfully", streamName);
-                                    } catch (Exception reconnectEx) {
-                                        logger.error("Stream {} - Reconnect failed: {}", 
-                                            streamName, reconnectEx.getMessage());
-                                        Thread.sleep(RECONNECT_DELAY_MS);
+                            if (frame == null) {
+                                nullFrameCount++;
+                                consecutiveNulls++;
+                                if (consecutiveNulls > 5) {
+                                    adaptiveSleepMs = Math.min(adaptiveSleepMs + 5, 150);
+                                }
+                                if (nullFrameCount >= MAX_NULL_FRAMES) {
+                                    logger.warn("Stream {} - {} consecutive null frames, attempting reconnect...",
+                                            streamName, nullFrameCount);
+
+                                    if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+                                        reconnectAttempts++;
+                                        logger.info("Stream {} - Reconnect attempt {}/{}",
+                                                streamName, reconnectAttempts, MAX_RECONNECT_ATTEMPTS);
+                                        try {
+                                            context.grabber = null;
+                                            grabberConfig.safeClose(grabber);
+                                            grabber = null;
+
+                                            context.recorder = null;
+                                            recorderConfig.safeClose(recorder);
+                                            recorder = null;
+
+                                            resourceManager.cleanStreamFiles(streamName);
+
+                                            String freshUrl = fetchRtspUrlFromFirebase(streamName,
+                                                    currentRtspUrl.get());
+                                            currentRtspUrl.set(freshUrl);
+                                            Thread.sleep(RECONNECT_DELAY_MS);
+
+                                            grabber = grabberConfig.startGrabberWithRetryHD(currentRtspUrl.get(),
+                                                    streamName, context);
+                                            int newWidth = grabber.getImageWidth();
+                                            int newHeight = grabber.getImageHeight();
+
+                                            recorder = recorderConfig.startRecorderWithRetryHD(
+                                                    hlsOutput, outputDir, newWidth, newHeight, streamName, context);
+
+                                            nullFrameCount = 0;
+
+                                            // budget
+                                            logger.info("Stream {} - Reconnected successfully", streamName);
+
+                                        } catch (Exception reconnectEx) {
+                                            logger.error("Stream {} - Reconnect failed: {}",
+                                                    streamName, reconnectEx.getMessage());
+                                            grabber = null;
+                                            recorder = null;
+                                            break; // break inner loop → full restart
+                                        }
+                                    } else {
+                                        logger.error("Stream {} - Max reconnects reached, triggering full restart",
+                                                streamName);
+                                        break; // break inner loop → full restart
                                     }
-                                } else {
-                                    logger.error("Stream {} - Max reconnect attempts reached, stopping stream", 
-                                        streamName);
+                                }
+                                continue;
+                            }
+
+                            // Good frame
+
+                            consecutiveNulls = 0;
+                            nullFrameCount = 0;
+                            frameCount++;
+                            long recordStart = System.currentTimeMillis();
+                            recorder.record(frame);
+                            long recordMs = System.currentTimeMillis() - recordStart;
+
+                            // Log if recording takes too long
+                            if (recordMs > 100) {
+                                logger.warn("Stream {} - recorder.record() took {}ms — encoder falling behind",
+                                        streamName, recordMs);
+                            }
+
+                            long now = System.currentTimeMillis();
+                            long actualFrameInterval = now - lastFrameTime;
+                            lastFrameTime = now;
+                            if (consecutiveNulls == 0 && actualFrameInterval > 0) {
+                                long targetSleep = (actualFrameInterval / 2);
+                                adaptiveSleepMs = Math.max(5, Math.min(targetSleep, 150));
+                            }
+                            if (now - lastLogTime >= 30_000) {
+                                logger.info("[{}] ✓ Live | Frames encoded: {}", streamName, frameCount);
+                                lastLogTime = now;
+                            }
+
+                            // orchestrator.processFrame(frame, streamName);
+                            frame.close();
+                            Thread.sleep(adaptiveSleepMs);
+
+                        } catch (org.bytedeco.javacv.FFmpegFrameRecorder.Exception recEx) {
+                            // Recorder broken → needs full restart (re-create both grabber + recorder)
+                            logger.error("Stream {} - Recorder error, triggering full restart: {}",
+                                    streamName, recEx.getMessage());
+                            break;
+                        } catch (Exception frameEx) {
+                            String msg = frameEx.getMessage() != null ? frameEx.getMessage() : "";
+                            if (msg.contains("AVFormatContext") || msg.contains("Could not grab")) {
+                                logger.error("Stream {} - Grabber lost context, triggering full restart", streamName);
+                                break; // breaks inner loop → goes to finally → full pipeline restart
+                            } else {
+                                logger.warn("Stream {} - Frame error: {}", streamName, msg);
+                                nullFrameCount++;
+                                try {
+                                    Thread.sleep(200);
+                                } catch (InterruptedException ie) {
+                                    Thread.currentThread().interrupt();
                                     break;
                                 }
                             }
-                            continue; // Try to grab next frame
                         }
-                        
-                        // Successfully got a frame - reset counters
-                        nullFrameCount = 0;
-                        reconnectAttempts = 0;
-                        frameCount++;
-
-                        long now = System.currentTimeMillis();
-                        if (now - lastLogTime >= 30_000) {
-                            logger.info("[{}] ✓ Live | Frames encoded: {}", streamName, frameCount);
-                            lastLogTime = now;
-                        }
-                        
-                        recorder.record(frame);
-                        frame.close(); // Release native memory immediately - prevents memory leak
-                        
-                    } catch (Exception frameEx) {
-                        logger.warn("Stream {} - Frame processing error: {}", streamName, frameEx.getMessage());
-                        nullFrameCount++;
                     }
+
+                } catch (InterruptedException ie) {
+                    logger.info("Stream {} interrupted, stopping", streamName);
+                    Thread.currentThread().interrupt();
+                    break; // exit outer loop
+                } catch (Exception e) {
+                    logger.error("Stream {} - Pipeline init failed: {}", streamName, e.getMessage(), e);
+                } finally {
+                    // Clean up before potential restart
+                    recorderConfig.safeClose(recorder);
+                    context.recorder = null;
+                    grabberConfig.safeClose(grabber);
+                    context.grabber = null;
                 }
 
-            } catch (Exception e) {
-                logger.error("Error in stream processing for {}: {}", streamName, e.getMessage(), e);
-            } finally {
-                logger.info("Cleaning up resources for {}", streamName);
-                resourceManager.cleanupResources(context);
-                streamContexts.remove(streamName);
-                streamThreads.remove(streamName);
+                // ── Decide whether to restart ──
+                if (!context.shouldStop && !Thread.currentThread().isInterrupted()) {
+                    fullRestartCount++;
+                    if (fullRestartCount <= MAX_FULL_RESTARTS) {
+                        logger.info("Stream {} - Full pipeline restart {}/{}, waiting {}ms...",
+                                streamName, fullRestartCount, MAX_FULL_RESTARTS, FULL_RESTART_DELAY_MS);
+                        // Refresh URL from Firebase and clean stale files before full restart
+                        String freshUrl = fetchRtspUrlFromFirebase(streamName, currentRtspUrl.get());
+                        currentRtspUrl.set(freshUrl);
+                        resourceManager.cleanStreamFiles(streamName);
+                        try {
+                            Thread.sleep(FULL_RESTART_DELAY_MS);
+                        } catch (InterruptedException ie) {
+                            Thread.currentThread().interrupt();
+                            break;
+                        }
+                    } else {
+                        logger.error("Stream {} - All {} full restart attempts exhausted, giving up",
+                                streamName, MAX_FULL_RESTARTS);
+                    }
+                }
             }
+
+            // Final cleanup
+            logger.info("Stream {} thread exiting", streamName);
+            // orchestrator.cleanup();
+            // motionOrchestrators.remove(streamName);
+            resourceManager.cleanupResources(context);
+            streamContexts.remove(streamName);
+            streamThreads.remove(streamName);
         });
 
         thread.setName("HLS-" + streamName);
-        thread.setDaemon(false); // Ensure thread completes cleanup before JVM shutdown
+        thread.setDaemon(false);
 
-        // Atomically put context and thread - prevents race condition
         StreamContext existingContext = streamContexts.putIfAbsent(streamName, context);
         Thread existingThread = streamThreads.putIfAbsent(streamName, thread);
 
         if (existingContext != null || existingThread != null) {
-            // Another thread won the race, clean up our context
+            streamContexts.remove(streamName, context);
+            streamThreads.remove(streamName, thread);
+            // motionOrchestrators.remove(streamName, orchestrator); // discard unused
+            // orchestrator
+            return "/api/hls/" + streamName + "/stream.m3u8";
+        }
+
+        thread.start();
+        logger.info("Started stream thread for {}", streamName);
+        return "/api/hls/" + streamName + "/stream.m3u8";
+    }
+
+    /**
+     * Attempts to fetch the latest RTSP URL for the given stream from
+     * Firebase/Firestore.
+     * The streamName is expected to follow the pattern "stream-{cameraId}".
+     * Falls back to the provided {@code fallbackUrl} if Firebase is unavailable or
+     * returns no URL.
+     *
+     * @param streamName  HLS stream name (e.g. "stream-abc123")
+     * @param fallbackUrl URL to use when Firebase lookup fails
+     * @return fresh RTSP URL from Firebase, or {@code fallbackUrl} on any error
+     */
+    private String fetchRtspUrlFromFirebase(String streamName, String fallbackUrl) {
+        try {
+            if (streamName != null && streamName.startsWith("stream-")) {
+                String cameraId = streamName.substring("stream-".length());
+                Optional<Camera> cameraOpt = cameraRepository.getCameraById(cameraId);
+                if (cameraOpt.isPresent()) {
+                    String freshUrl = cameraOpt.get().getRtspUrl();
+                    if (freshUrl != null && !freshUrl.isBlank()) {
+                        if (!freshUrl.equals(fallbackUrl)) {
+                            logger.info("Stream {} - RTSP URL refreshed from Firebase: {}", streamName, freshUrl);
+                        } else {
+                            logger.debug("Stream {} - RTSP URL unchanged after Firebase lookup", streamName);
+                        }
+                        return freshUrl;
+                    }
+                }
+                logger.warn("Stream {} - Camera {} not found or has no RTSP URL in Firebase, keeping cached URL",
+                        streamName, cameraId);
+            }
+        } catch (Exception e) {
+            logger.warn("Stream {} - Firebase RTSP URL lookup failed ({}), keeping cached URL",
+                    streamName, e.getMessage());
+        }
+        return fallbackUrl;
+    }
+
+    public String stopHLSStream(String streamName) {
+        Thread thread = streamThreads.remove(streamName);
+        // Remove context eagerly so a concurrent startHLSStream can proceed during the
+        // join window
+        StreamContext context = streamContexts.remove(streamName);
+
+        if (thread == null && context == null) {
+            return "Stream not found or already stopped.";
+        }
+
+        if (context != null) {
+            context.shouldStop = true;
+        }
+
+        if (thread != null) {
+            thread.interrupt();
+            try {
+                thread.join(5000);
+                if (thread.isAlive()) {
+                    if (context != null) {
+                        resourceManager.cleanupResources(context);
+                    }
+                    // MotionOrchestratorService forcedOrchestrator =
+                    // motionOrchestrators.remove(streamName);
+                    // if (forcedOrchestrator != null) forcedOrchestrator.cleanup();
+                    thread.join(2000);
+                    if (thread.isAlive()) {
+                        logger.error("Thread {} still alive after forced cleanup. It will be abandoned.", streamName);
+                    }
+                } else {
+                    logger.info("Thread {} stopped gracefully", streamName);
+                }
+            } catch (InterruptedException e) {
+                logger.warn("Interrupted while waiting for thread {} to stop", streamName);
+                Thread.currentThread().interrupt();
+            }
+        }
+
+        // Only delete HLS files if no new stream was started for this name during the
+        // join window
+        if (!streamContexts.containsKey(streamName)) {
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            resourceManager.deleteStreamDirectory(streamName);
+            logger.info("Stream {} stopped and files deleted", streamName);
+        } else {
+            logger.info("Stream {} stopped — new instance already running, files preserved", streamName);
+        }
+        return "Stream stopped and files deleted.";
+    }
+}
+
+
+
+This version can use but it take long time forconnect 
+package com.backendcam.backendcam.service.hls;
+
+import java.io.File;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
+
+import org.bytedeco.javacv.FFmpegFrameGrabber;
+import org.bytedeco.javacv.FFmpegFrameRecorder;
+import org.bytedeco.javacv.Frame;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.backendcam.backendcam.model.entity.Camera;
+import com.backendcam.backendcam.repository.CameraRepository;
+
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
+
+@Service
+public class HLSStreamService {
+
+    private static final Logger logger = LoggerFactory.getLogger(HLSStreamService.class);
+    private static final int MAX_RECONNECT_ATTEMPTS = 10;
+    private static final int RECONNECT_DELAY_MS = 3000;
+    private static final int MAX_NULL_FRAMES = 300;
+    private static final int MAX_FULL_RESTARTS = 5;
+    private static final long FULL_RESTART_DELAY_MS = 5000;
+
+    private final Map<String, Thread> streamThreads = new ConcurrentHashMap<>();
+    private final Map<String, StreamContext> streamContexts = new ConcurrentHashMap<>();
+
+    @Autowired
+    private CameraRepository cameraRepository;
+
+    @Autowired
+    private FFmpegGrabberConfig grabberConfig;
+
+    @Autowired
+    private FFmpegRecorderConfig recorderConfig;
+
+    @Autowired
+    private StreamResourceManager resourceManager;
+
+    @PostConstruct
+    public void init() {
+        resourceManager.cleanupAllStreams();
+    }
+
+    @PreDestroy
+    public void shutdown() {
+        logger.info("Shutting down HLSStreamService - stopping all streams...");
+        String[] streamNames = streamThreads.keySet().toArray(new String[0]);
+        for (String streamName : streamNames) {
+            try {
+                stopHLSStream(streamName);
+            } catch (Exception e) {
+                logger.error("Error stopping stream {} during shutdown: {}", streamName, e.getMessage());
+            }
+        }
+        logger.info("HLSStreamService shutdown complete");
+    }
+
+    public synchronized String startHLSStream(String RTSPUrl, String streamName) {
+
+        if (streamThreads.containsKey(streamName)) {
+            return "/api/hls/" + streamName + "/stream.m3u8";
+        }
+
+        File outputDir = new File(resourceManager.getHlsRoot(), streamName);
+        if (!outputDir.exists() && !outputDir.mkdirs()) {
+            throw new RuntimeException("Failed to create output directory: " + outputDir.getAbsolutePath());
+        }
+
+        StreamContext context = new StreamContext();
+        AtomicReference<String> currentRtspUrl = new AtomicReference<>(RTSPUrl);
+
+        Thread thread = new Thread(() -> {
+            String hlsOutput = outputDir.getAbsolutePath().replace('\\', '/') + "/stream.m3u8";
+            int fullRestartCount = 0;
+
+            // ── Outer loop: full pipeline restart on fatal errors ──────────
+            while (!Thread.currentThread().isInterrupted()
+                    && !context.shouldStop
+                    && fullRestartCount <= MAX_FULL_RESTARTS) {
+
+                FFmpegFrameGrabber grabber = null;
+                FFmpegFrameRecorder recorder = null;
+
+                try {
+                    // Phase 1 — Init grabber
+                    grabber = grabberConfig.startGrabberWithRetryHD(
+                            currentRtspUrl.get(), streamName, context);
+
+                    int width = grabber.getImageWidth();
+                    int height = grabber.getImageHeight();
+
+                    int cameraFps = (int) grabber.getFrameRate();
+                    if (cameraFps <= 0)
+                        cameraFps = 15;
+
+                    // Phase 2 — Init recorder
+                    recorder = recorderConfig.startRecorderWithRetryHD(
+                            hlsOutput, outputDir, width, height, cameraFps, streamName, context);
+
+                    // Phase 2.5 — Flush stale buffer
+                    logger.info("Stream {} - Flushing stale grabber buffer...", streamName);
+                    int flushed = 0;
+                    for (int i = 0; i < 45; i++) {
+                        if (Thread.currentThread().isInterrupted() || context.shouldStop)
+                            break;
+                        Frame stale = grabber.grabImage();
+                        if (stale == null)
+                            break;
+                        stale.close();
+                        flushed++;
+                    }
+                    logger.info("Stream {} - Flushed {} stale frames", streamName, flushed);
+
+                    if (flushed == 0) {
+                        throw new RuntimeException("Camera connected but sent 0 frames during flush");
+                    }
+
+                    // Phase 3 — Frame streaming loop (idle-based adaptive sleep)
+                    // ─────────────────────────────────────────────────────────
+                    // Strategy: measure how long we've been waiting since the last
+                    // good frame. Use that idle time to decide how long to sleep.
+                    //
+                    // idleTime < expectedInterval → camera is fast → sleep 2ms
+                    // idleTime < expectedInterval × 3 → normal gap → sleep 10ms
+                    // idleTime >= expectedInterval × 3 → slow camera → sleep 30ms
+                    //
+                    // This replaces all fixed/adaptive sleep guesswork.
+                    // Each stream self-tunes to its own camera's actual behaviour.
+                    // ─────────────────────────────────────────────────────────
+
+                    int reportedFps = (int) grabber.getFrameRate();
+                    if (reportedFps <= 0)
+                        reportedFps = 15;
+                    long expectedInterval = 1000 / reportedFps; // ms between frames
+                    long lastFrameTime = System.currentTimeMillis();
+
+                    int nullFrameCount = 0;
+                    int reconnectAttempts = 0;
+                    long frameCount = 0;
+                    long lastLogTime = System.currentTimeMillis();
+
+                    logger.info("Stream {} - Live loop started | {}fps reported | {}ms expected interval",
+                            streamName, reportedFps, expectedInterval);
+
+                    while (!Thread.currentThread().isInterrupted() && !context.shouldStop) {
+                        try {
+                            Frame frame = grabber.grabImage();
+                            long now = System.currentTimeMillis();
+
+                            // ── Null frame path ───────────────────────────────────
+                            if (frame == null) {
+                                nullFrameCount++;
+
+                                // Idle-based sleep — adapt to how long we've waited
+                                long idleTime = now - lastFrameTime;
+                                long sleepTime;
+                                if (idleTime < expectedInterval) {
+                                    sleepTime = 2; // camera is fast, check again soon
+                                } else if (idleTime < expectedInterval * 3) {
+                                    sleepTime = 10; // normal inter-frame gap
+                                } else {
+                                    sleepTime = 30; // slow camera or burst pause
+                                }
+                                Thread.sleep(sleepTime);
+
+                                if (nullFrameCount >= MAX_NULL_FRAMES) {
+                                    logger.warn("Stream {} - {} null frames (idle {}ms), reconnecting...",
+                                            streamName, nullFrameCount, now - lastFrameTime);
+
+                                    if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+                                        reconnectAttempts++;
+                                        logger.info("Stream {} - Reconnect attempt {}/{}",
+                                                streamName, reconnectAttempts, MAX_RECONNECT_ATTEMPTS);
+                                        try {
+                                            // Tear down
+                                            context.grabber = null;
+                                            grabberConfig.safeClose(grabber);
+                                            grabber = null;
+
+                                            context.recorder = null;
+                                            recorderConfig.safeClose(recorder);
+                                            recorder = null;
+
+                                            resourceManager.cleanStreamFiles(streamName);
+
+                                            String freshUrl = fetchRtspUrlFromFirebase(
+                                                    streamName, currentRtspUrl.get());
+                                            currentRtspUrl.set(freshUrl);
+                                            Thread.sleep(RECONNECT_DELAY_MS);
+
+                                            // Rebuild
+                                            grabber = grabberConfig.startGrabberWithRetryHD(
+                                                    currentRtspUrl.get(), streamName, context);
+                                            int newWidth = grabber.getImageWidth();
+                                            int newHeight = grabber.getImageHeight();
+                                            int newCameraFps = (int) grabber.getFrameRate();
+                                            if (newCameraFps <= 0)
+                                                newCameraFps = 15;
+                                            recorder = recorderConfig.startRecorderWithRetryHD(
+                                                    hlsOutput, outputDir, newWidth, newHeight, newCameraFps, streamName,
+                                                    context);
+                                            logger.info("Stream {} - Flushing buffer after reconnect...", streamName);
+                                            int postFlush = 0;
+                                            for (int i = 0; i < 45; i++) {
+                                                Frame stale = grabber.grabImage();
+                                                if (stale == null)
+                                                    break;
+                                                stale.close();
+                                                postFlush++;
+                                            }
+                                            logger.info("Stream {} - Post-reconnect flush: {} frames cleared",
+                                                    streamName, postFlush);
+                                            // ────────────────────────────────────────────────────────────
+
+                                            // Reset all counters + recalculate interval
+                                            nullFrameCount = 0;
+                                            lastFrameTime = System.currentTimeMillis();
+                                            reportedFps = (int) grabber.getFrameRate();
+                                            if (reportedFps <= 0)
+                                                reportedFps = 15;
+                                            expectedInterval = 1000 / reportedFps;
+
+                                            logger.info("Stream {} - Reconnected | {}fps | {}ms interval",
+                                                    streamName, reportedFps, expectedInterval);
+
+                                        } catch (Exception reconnectEx) {
+                                            logger.error("Stream {} - Reconnect failed: {}",
+                                                    streamName, reconnectEx.getMessage());
+                                            grabber = null;
+                                            recorder = null;
+                                            break; // → finally → full restart
+                                        }
+                                    } else {
+                                        logger.error("Stream {} - Max reconnects reached, full restart",
+                                                streamName);
+                                        break; // → finally → full restart
+                                    }
+                                }
+                                continue;
+                            }
+
+                            // ── Good frame path ───────────────────────────────────
+                            lastFrameTime = now;
+                            nullFrameCount = 0;
+                            frameCount++;
+
+                            long recordStart = System.currentTimeMillis();
+                            recorder.record(frame);
+                            long recordMs = System.currentTimeMillis() - recordStart;
+
+                            if (recordMs > 100) {
+                                logger.warn("Stream {} - recorder.record() took {}ms — encoder falling behind",
+                                        streamName, recordMs);
+                            }
+
+                            if (now - lastLogTime >= 30_000) {
+                                logger.info("[{}] ✓ Live | Frames encoded: {}", streamName, frameCount);
+                                lastLogTime = now;
+                            }
+
+                            frame.close();
+                            // NO sleep after good frame — process next frame immediately
+
+                        } catch (org.bytedeco.javacv.FFmpegFrameRecorder.Exception recEx) {
+                            logger.error("Stream {} - Recorder error, full restart: {}",
+                                    streamName, recEx.getMessage());
+                            break;
+                        } catch (InterruptedException ie) {
+                            Thread.currentThread().interrupt();
+                            break;
+                        } catch (Exception frameEx) {
+                            String msg = frameEx.getMessage() != null ? frameEx.getMessage() : "";
+                            if (msg.contains("AVFormatContext") || msg.contains("Could not grab")) {
+                                logger.error("Stream {} - Grabber lost context, full restart", streamName);
+                                break;
+                            } else {
+                                logger.warn("Stream {} - Frame error: {}", streamName, msg);
+                                nullFrameCount++;
+                                Thread.sleep(30);
+                            }
+                        }
+                    }
+
+                } catch (InterruptedException ie) {
+                    logger.info("Stream {} interrupted, stopping", streamName);
+                    Thread.currentThread().interrupt();
+                    break;
+                } catch (Exception e) {
+                    logger.error("Stream {} - Pipeline init failed: {}", streamName, e.getMessage(), e);
+                } finally {
+                    recorderConfig.safeClose(recorder);
+                    context.recorder = null;
+                    grabberConfig.safeClose(grabber);
+                    context.grabber = null;
+                }
+
+                // ── Decide whether to do a full restart ───────────────────
+                if (!context.shouldStop && !Thread.currentThread().isInterrupted()) {
+                    fullRestartCount++;
+                    if (fullRestartCount <= MAX_FULL_RESTARTS) {
+                        logger.info("Stream {} - Full pipeline restart {}/{}, waiting {}ms...",
+                                streamName, fullRestartCount, MAX_FULL_RESTARTS, FULL_RESTART_DELAY_MS);
+                        String freshUrl = fetchRtspUrlFromFirebase(streamName, currentRtspUrl.get());
+                        currentRtspUrl.set(freshUrl);
+                        resourceManager.cleanStreamFiles(streamName);
+                        try {
+                            Thread.sleep(FULL_RESTART_DELAY_MS);
+                        } catch (InterruptedException ie) {
+                            Thread.currentThread().interrupt();
+                            break;
+                        }
+                    } else {
+                        logger.error("Stream {} - All {} full restart attempts exhausted, giving up",
+                                streamName, MAX_FULL_RESTARTS);
+                    }
+                }
+            }
+
+            // Final cleanup
+            logger.info("Stream {} thread exiting", streamName);
+            resourceManager.cleanupResources(context);
+            streamContexts.remove(streamName);
+            streamThreads.remove(streamName);
+        });
+
+        thread.setName("HLS-" + streamName);
+        thread.setDaemon(false);
+
+        StreamContext existingContext = streamContexts.putIfAbsent(streamName, context);
+        Thread existingThread = streamThreads.putIfAbsent(streamName, thread);
+
+        if (existingContext != null || existingThread != null) {
             streamContexts.remove(streamName, context);
             streamThreads.remove(streamName, thread);
             return "/api/hls/" + streamName + "/stream.m3u8";
@@ -230,67 +797,79 @@ public class HLSStreamService {
 
         thread.start();
         logger.info("Started stream thread for {}", streamName);
-
         return "/api/hls/" + streamName + "/stream.m3u8";
     }
 
+    private String fetchRtspUrlFromFirebase(String streamName, String fallbackUrl) {
+        try {
+            if (streamName != null && streamName.startsWith("stream-")) {
+                String cameraId = streamName.substring("stream-".length());
+                Optional<Camera> cameraOpt = cameraRepository.getCameraById(cameraId);
+                if (cameraOpt.isPresent()) {
+                    String freshUrl = cameraOpt.get().getRtspUrl();
+                    if (freshUrl != null && !freshUrl.isBlank()) {
+                        if (!freshUrl.equals(fallbackUrl)) {
+                            logger.info("Stream {} - RTSP URL refreshed from Firebase: {}", streamName, freshUrl);
+                        } else {
+                            logger.debug("Stream {} - RTSP URL unchanged after Firebase lookup", streamName);
+                        }
+                        return freshUrl;
+                    }
+                }
+                logger.warn("Stream {} - Camera {} not found or has no RTSP URL in Firebase, keeping cached URL",
+                        streamName, cameraId);
+            }
+        } catch (Exception e) {
+            logger.warn("Stream {} - Firebase RTSP URL lookup failed ({}), keeping cached URL",
+                    streamName, e.getMessage());
+        }
+        return fallbackUrl;
+    }
+
     public String stopHLSStream(String streamName) {
-        // Get and remove thread first to prevent new operations
         Thread thread = streamThreads.remove(streamName);
-        StreamContext context = streamContexts.get(streamName);
+        StreamContext context = streamContexts.remove(streamName);
 
         if (thread == null && context == null) {
             return "Stream not found or already stopped.";
         }
 
-        // Signal thread to stop
         if (context != null) {
             context.shouldStop = true;
         }
 
-        // Interrupt thread if it exists
         if (thread != null) {
             thread.interrupt();
-
             try {
-                // Wait for thread to finish with timeout
-                thread.join(5000); // Wait up to 5 seconds
-
+                thread.join(5000);
                 if (thread.isAlive()) {
-                    // Force close resources to help thread exit
                     if (context != null) {
                         resourceManager.cleanupResources(context);
                     }
-                    // Try one more time with shorter timeout
                     thread.join(2000);
-
                     if (thread.isAlive()) {
-                        logger.error("Thread {} still alive after forced cleanup. It will be abandoned.",
-                                streamName);
+                        logger.error("Thread {} still alive after forced cleanup. It will be abandoned.", streamName);
                     }
                 } else {
                     logger.info("Thread {} stopped gracefully", streamName);
                 }
             } catch (InterruptedException e) {
                 logger.warn("Interrupted while waiting for thread {} to stop", streamName);
-                Thread.currentThread().interrupt(); // Restore interrupt status
+                Thread.currentThread().interrupt();
             }
         }
 
-        // Remove context if still present (should be removed by thread's finally block)
-        streamContexts.remove(streamName);
-
-        // Small delay to ensure OS releases file handles
-        try {
-            Thread.sleep(500);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
+        if (!streamContexts.containsKey(streamName)) {
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            resourceManager.deleteStreamDirectory(streamName);
+            logger.info("Stream {} stopped and files deleted", streamName);
+        } else {
+            logger.info("Stream {} stopped — new instance already running, files preserved", streamName);
         }
-
-        // Delete stream directory
-        resourceManager.deleteStreamDirectory(streamName);
-        logger.info("Stream {} stopped and files deleted", streamName);
-
         return "Stream stopped and files deleted.";
     }
 }

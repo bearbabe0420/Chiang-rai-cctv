@@ -26,21 +26,21 @@ class FFmpegRecorderConfig {
 
     // HD Quality Settings (High Definition - 720p/1080p) - Optimized for Low
     // Latency
-    private static final int HD_TARGET_FPS = 10;
+    //private static final int HD_TARGET_FPS = 15;
     private static final int HD_HLS_TIME = 1; // 1-second segments for lower latency
     private static final int HD_VIDEO_BITRATE_720P = 2500_000; // 2.5 Mbps for 720p
     private static final int HD_VIDEO_BITRATE_1080P = 4500_000; // 4.5 Mbps for 1080p
     private static final int HD_CRF_QUALITY = 23; // Balanced quality for faster encoding
 
-    private static final int TARGET_FPS_2K= 15;
+    //private static final int TARGET_FPS_2K= 15;
     private static final int HLS_TIME_2K = 1; // 2-second segments for 2K to allow more time for encoding
     private static final int VIDEO_BITRATE_2K = 10_000_000; // 10 Mbps for 2K resolution
     private static final int CRF_QUALITY_2K = 25; // Slightly higher CRF for 2K to reduce CPU load while maintaining good quality
 
     // FPS is kept at 15 — encoding true 4K at 30fps realtime requires dedicated
     // hardware (NVENC/VAAPI)
-    private static final int UHD_TARGET_FPS = 15; // 15fps — max stable for software 4K encoding
-    private static final int UHD_HLS_TIME = 2; // 2-second segments — 4K needs more time to flush per segment
+    //private static final int UHD_TARGET_FPS = 15; // 15fps — max stable for software 4K encoding
+    private static final int UHD_HLS_TIME = 1; // 1-second segments — 4K needs more time to flush per segment
     private static final int UHD_VIDEO_BITRATE_2160P = 20_000_000; // 20 Mbps — minimum acceptable for 4K detail
     private static final int UHD_CRF_QUALITY = 28; // Higher CRF = less work per frame, keeps encoder from falling
                                                    // behind
@@ -118,7 +118,7 @@ class FFmpegRecorderConfig {
      * @throws Exception if all retries exhausted or interrupted
      */
     public FFmpegFrameRecorder startRecorderWithRetryHD(String hlsOutput, File outputDir,
-            int width, int height,
+            int width, int height,int cameraFps,
             String streamName,
             StreamContext context) throws Exception {
         Exception lastException = null;
@@ -137,7 +137,7 @@ class FFmpegRecorderConfig {
 
                 recorder = new FFmpegFrameRecorder(hlsOutput, width, height, 0);
                 context.recorder = recorder;
-                configureRecorderForHD(recorder, outputDir, width, height); // HD configuration
+                configureRecorderForHD(recorder, outputDir, width, height, cameraFps); // HD configuration
 
                 logger.info("Stream {} - HD Recorder ready ({}p) on attempt {}",
                         streamName, height, attempt);
@@ -247,96 +247,79 @@ class FFmpegRecorderConfig {
      * @param height    Video height (720 or 1080)
      * @throws Exception if configuration fails
      */
-    public void configureRecorderForHD(FFmpegFrameRecorder recorder, File outputDir, int width, int height)
-            throws Exception {
-        // Normalize path to forward slashes for FFmpeg compatibility
-        String normalizedPath = outputDir.getAbsolutePath().replace('\\', '/');
+   public void configureRecorderForHD(FFmpegFrameRecorder recorder, File outputDir, int width, int height,int cameraFps)
+        throws Exception {
+    String normalizedPath = outputDir.getAbsolutePath().replace('\\', '/');
 
-        boolean is4K = (height > 2160);
-        boolean is2K = (height > 1080 && height <= 2160);
-        boolean is1080p = (height == 1080);
-        // boolean is720p = (height <= 720);
-        int bitrate = is4K ? UHD_VIDEO_BITRATE_2160P
-                        : is2K ? VIDEO_BITRATE_2K
-                            : is1080p ? HD_VIDEO_BITRATE_1080P
-                                : HD_VIDEO_BITRATE_720P;
+    // FIX 1: was (height > 2160) — misses 4K (2160p). Now correctly >= 2160.
+    boolean is4K = (height >= 2160);
+    boolean is2K = (height > 1080 && height < 2160);  // 1440p / 1520p / 2.7K
+    boolean is1080p = (height == 1080);
 
-        int targetFPS = is4K ? UHD_TARGET_FPS
-                            : is2K ? TARGET_FPS_2K
-                                : HD_TARGET_FPS;
-        int hlsTime = is4K ? UHD_HLS_TIME 
-                                : is2K ? HLS_TIME_2K
-                                    : HD_HLS_TIME;
-        int crfQuality = is4K ? UHD_CRF_QUALITY 
-                            : is2K ? CRF_QUALITY_2K
-                                : HD_CRF_QUALITY;
-        // Determine output resolution dynamically based on input height
-        // Downscales to the appropriate target rather than hardcoding 1920x1080
+    int bitrate = is4K  ? UHD_VIDEO_BITRATE_2160P   // 20 Mbps
+                : is2K  ? VIDEO_BITRATE_2K           // 10 Mbps
+                : is1080p ? HD_VIDEO_BITRATE_1080P   // 4.5 Mbps
+                : HD_VIDEO_BITRATE_720P;             // 2.5 Mbps
 
-           int targetWidth  = width;
-           int targetHeight = height;
+    int maxFps  = is4K ? 15 : is2K ? 15 : 25;
+int targetFPS = Math.min(cameraFps > 0 ? cameraFps : 15, maxFps);
+    int hlsTime   = is4K ? UHD_HLS_TIME  : is2K ? HLS_TIME_2K   : HD_HLS_TIME;
+    int crfQuality= is4K ? UHD_CRF_QUALITY : is2K ? CRF_QUALITY_2K : HD_CRF_QUALITY;
 
-        recorder.setImageWidth(targetWidth);
-        recorder.setImageHeight(targetHeight);
-        recorder.setVideoCodec(avcodec.AV_CODEC_ID_H264);
-        recorder.setFormat("hls");
+    recorder.setImageWidth(width);
+    recorder.setImageHeight(height);
+    recorder.setVideoCodec(avcodec.AV_CODEC_ID_H264);
+    recorder.setFormat("hls");
+    recorder.setVideoBitrate(bitrate);
+    recorder.setVideoQuality(0); // 0 = let NVENC rc mode control quality
 
-        // HD Video quality settings
-        recorder.setVideoBitrate(bitrate);
-        recorder.setVideoQuality(crfQuality); // CRF value for quality (lower is better, 18-28 typical)
+    // Timing & keyframes
+    recorder.setFrameRate(targetFPS);
+    recorder.setGopSize(targetFPS * hlsTime);
+    recorder.setOption("keyint_min", String.valueOf(targetFPS * hlsTime));
+    recorder.setOption("sc_threshold", "0");
+    recorder.setOption("force_key_frames", "expr:gte(t,n_forced*" + hlsTime + ")");
 
-        // Timing & keyframes for HD
-        recorder.setFrameRate(targetFPS);
-        recorder.setGopSize(targetFPS * hlsTime);
-        recorder.setOption("keyint_min", String.valueOf(targetFPS * hlsTime));
-        recorder.setOption("sc_threshold", "0");
-        recorder.setOption("x264-params", "no-scenecut=1:force-cfr=1");
-        recorder.setOption(
-                "force_key_frames",
-                "expr:gte(t,n_forced*" + hlsTime + ")");
+    // HLS muxer
+    recorder.setOption("hls_time", String.valueOf(hlsTime));
+    recorder.setOption("hls_list_size", "5");
+    recorder.setOption("hls_delete_threshold", "1");
+    recorder.setOption("hls_allow_cache", "0");
+    recorder.setOption("hls_segment_type", "mpegts");
+    recorder.setOption("hls_flags", "delete_segments+omit_endlist");
+    recorder.setOption("hls_segment_filename", normalizedPath + "/s%04d.ts");
 
-        // HLS specific settings for HD - Optimized for Low Latency
-        recorder.setOption("hls_time", String.valueOf(hlsTime)); // segment duration
-        recorder.setOption("hls_list_size", "5"); // 5s buffer — resilient against encode hiccups without too much delay
-        recorder.setOption("hls_delete_threshold", "1"); // keep 1 segment before deleting old ones
-        recorder.setOption("hls_allow_cache", "0");
-        //recorder.setOption("hls_version", "3"); 
-        recorder.setOption("hls_segment_type", "mpegts");
-        recorder.setOption("hls_flags", "delete_segments+omit_endlist");//+temp_file+independent_segments
+    // ─── FIX 2: NVENC hardware encoder ───────────────────────────────
+    // "vcodec" forces FFmpeg to use h264_nvenc instead of libx264
+    recorder.setVideoCodecName("h264_nvenc");  // or: recorder.setOption("vcodec","h264_nvenc")
 
-        // Segment filename pattern - use normalized path
-        String segPath = normalizedPath + "/s%04d.ts";
-        recorder.setOption("hls_segment_filename", segPath);
+    // NVENC presets: p1=fastest/lowest quality, p7=slowest/highest quality
+    // p2 gives good speed with acceptable quality for live streams
+    recorder.setOption("preset", is4K ? "p2" : "p2");
 
-        // FIX: Fixed at 2 threads per stream for predictable multi-camera resource
-        // control
-        // Keeping this hardcoded ensures each camera gets equal, controlled CPU
-        // allocation
-        recorder.setOption("threads", "1");
-        //recorder.setOption("threads", is4K ? "4" : "2");
+    // NVENC low-latency tuning (replaces x264's "zerolatency")
+    recorder.setOption("tune", "ll");           // low-latency
+    recorder.setOption("rc", "cbr");            // constant bitrate — best for live HLS
+    recorder.setOption("rc-lookahead", "0");    // no lookahead = no latency added
+    recorder.setOption("zerolatency", "1");     // disable reordering delay
+    recorder.setOption("bf", "0");              // no B-frames
+    recorder.setOption("b_ref_mode", "disabled");
+    recorder.setOption("surfaces", "8");        // GPU surface count per stream — reduce for many streams
+    recorder.setOption("gpu", "0");             // use first GPU
 
+    // Profile & level (same as before, still valid for NVENC)
+    recorder.setOption("profile", "high");
+    recorder.setOption("level", is4K ? "5.1" : "4.1");
 
-        // FIX: Changed from "fast" to "superfast"
-        // "fast" preset does lookahead analysis that 2 threads cannot handle in
-        // realtime at HD resolution
-        // "superfast" removes that lookahead pressure while still producing acceptable
-        // HD quality
-        recorder.setOption("preset", "ultrafast"); // "superfast" is a good balance for HD on limited CPU, "ultrafast" for max speed with lower quality
+    // Thread count for muxing/IO only (encoding is on GPU now)
+    recorder.setOption("threads", "2");
 
-        recorder.setOption("tune", "zerolatency"); // Critical for live streaming
-        recorder.setOption("bf", "0"); // No B-frames for lower latency
+    // Remove x264-only params:
+    // recorder.setOption("x264-params", ...) ← DELETE THIS — invalid for NVENC
+    // recorder.setOption("refs", "2")        ← NVENC handles this internally
 
-        // FIX: Increased refs from 2 to 4
-        // profile=high supports up to refs=16 — refs=2 was underutilizing it
-        // refs=4 gives better compression/quality at same bitrate with minimal extra
-        // CPU at superfast preset
-        recorder.setOption("refs", "2");
+    recorder.setOption("vsync", "cfr");
 
-        recorder.setOption("vsync", "cfr");
-        recorder.setOption("profile", "high"); // H.264 High profile for HD
-        recorder.setOption("level", is4K ? "5.1" : "4.1"); // H.264 level 4.1 supports 1080p@30fps
-
-        // start
-        recorder.start();
-    }
+    recorder.start();
+}
 }
