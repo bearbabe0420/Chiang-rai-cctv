@@ -2,7 +2,7 @@
 import '/utils/flutter_flow/theme.dart';
 import '/utils/flutter_flow/util.dart';
 import '/utils/flutter_flow/widgets.dart';
-import '/presentation/widgets/nav/views/nav_bar_main_widget.dart';
+import '../../widgets/nav/nav_bar_main_widget.dart';
 import '../command_view/widgets/hls_player.dart' as custom_widgets;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';

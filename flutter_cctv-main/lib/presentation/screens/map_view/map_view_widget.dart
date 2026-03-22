@@ -1,6 +1,6 @@
 import '/presentation/screens/map_view/widgets/views/map_view_component_widget.dart';
 import '/presentation/screens/map_view/widgets/views/marker_info_popup_widget.dart';
-import '/presentation/widgets/nav/views/nav_bar_main_widget.dart';
+import '../../widgets/nav/nav_bar_main_widget.dart';
 import '/presentation/screens/map_view/widgets/views/preview_overlay_widget.dart';
 import '/data/repositories/camera_repository.dart';
 import '/utils/flutter_flow/theme.dart';

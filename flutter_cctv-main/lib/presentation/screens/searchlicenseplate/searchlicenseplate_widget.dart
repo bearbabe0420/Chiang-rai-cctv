@@ -1,5 +1,5 @@
 import '/data/services/index.dart';
-import '/presentation/widgets/nav/views/nav_bar_main_widget.dart';
+import '../../widgets/nav/nav_bar_main_widget.dart';
 import '/core/i18n/i18n.dart';
 import '/utils/flutter_flow/theme.dart';
 import '/utils/flutter_flow/util.dart';

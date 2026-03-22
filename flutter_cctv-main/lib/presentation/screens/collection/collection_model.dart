@@ -1,5 +1,5 @@
+import 'package:central_command/presentation/widgets/nav/nav_bar_main_widget.dart';
 import '/data/services/index.dart';
-import '/presentation/widgets/nav_bar_main_widget.dart';
 import '/utils/flutter_flow_data_table.dart';
 import '/utils/flutter_flow_icon_button.dart';
 import '/utils/flutter_flow_theme.dart';
