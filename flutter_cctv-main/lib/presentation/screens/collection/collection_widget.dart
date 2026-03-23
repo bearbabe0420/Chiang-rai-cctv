@@ -119,7 +119,18 @@ class _CollectionWidgetState extends State<CollectionWidget> {
         });
       }
 
-      _model.paginatedDataTableController.paginatorController.goToFirstPage();
+      final paginator =
+          _model.paginatedDataTableController.paginatorController;
+      if (paginator.isAttached) {
+        paginator.goToFirstPage();
+      } else {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          if (paginator.isAttached) {
+            paginator.goToFirstPage();
+          }
+        });
+      }
     } catch (e) {
       debugPrint('Error fetching cameras: $e');
       if (mounted) safeSetState(() => _model.isLoading = false);

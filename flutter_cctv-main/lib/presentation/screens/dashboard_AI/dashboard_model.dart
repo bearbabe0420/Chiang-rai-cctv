@@ -23,13 +23,36 @@ class DetectionEvent {
 
 class LicensePlateData {
   final int totalDetected;
-  const LicensePlateData({required this.totalDetected});
+  final String? latestPlateNumber;
+  final String? cameraId;
+  final DateTime? lastDetection;
+  final int? todayCount;
+  final String? snapshotUrl;
+
+  const LicensePlateData({
+    required this.totalDetected,
+    this.latestPlateNumber,
+    this.cameraId,
+    this.lastDetection,
+    this.todayCount,
+    this.snapshotUrl,
+  });
 
   String get formattedTotal {
     return totalDetected.toString().replaceAllMapped(
       RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
       (m) => '${m[1]},',
     );
+  }
+
+  String? get formattedTime {
+    if (lastDetection == null) return null;
+    final h = lastDetection!.hour;
+    final m = lastDetection!.minute.toString().padLeft(2, '0');
+    final s = lastDetection!.second.toString().padLeft(2, '0');
+    final period = h >= 12 ? 'PM' : 'AM';
+    final hour12 = h > 12 ? h - 12 : (h == 0 ? 12 : h);
+    return '${hour12.toString().padLeft(2, '0')}:$m:$s $period';
   }
 }
 

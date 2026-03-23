@@ -31,13 +31,15 @@ class _DashboardWidgetState extends State<DashboardWidget> {
     cameraId: 'Camera-A03',
     lastDetection: DateTime(2024, 1, 1, 9, 15, 42),
     todayCount: 3,
-    snapshotUrl: 'https://images.unsplash.com/photo-1506521781263-d8422e82f27a?w=400&h=200&fit=crop',
+    snapshotUrl:
+        'https://images.unsplash.com/photo-1506521781263-d8422e82f27a?w=400&h=200&fit=crop',
   );
   final _fightingEvent = DetectionEvent(
     cameraId: 'Camera-B07',
     lastDetection: DateTime(2024, 1, 1, 14, 28, 33),
     todayCount: 5,
-    snapshotUrl: 'https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=400&h=200&fit=crop',
+    snapshotUrl:
+        'https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=400&h=200&fit=crop',
   );
   final _systemStats = const SystemStats(
     camerasOnline: 24,
@@ -95,11 +97,21 @@ class _DashboardWidgetState extends State<DashboardWidget> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(context.tr('dashboard_ai.title', fallback: 'แดชบอร์ดเฝ้าระวัง AI'),
-                            style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700, color: Color(0xFF1A1A1A), letterSpacing: -0.5)),
+                        Text(
+                            context.tr('dashboard_ai.title',
+                                fallback: 'แดชบอร์ดเฝ้าระวัง AI'),
+                            style: TextStyle(
+                                fontSize: 28,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF1A1A1A),
+                                letterSpacing: -0.5)),
                         SizedBox(height: 4),
-                        Text(context.tr('dashboard_ai.subtitle', fallback: 'สถานะการตรวจจับแบบเรียลไทม์จากระบบกล้องอัจฉริยะ'),
-                            style: TextStyle(fontSize: 14, color: Color(0xFF8A8A8E))),
+                        Text(
+                            context.tr('dashboard_ai.subtitle',
+                                fallback:
+                                    'สถานะการตรวจจับแบบเรียลไทม์จากระบบกล้องอัจฉริยะ'),
+                            style: TextStyle(
+                                fontSize: 14, color: Color(0xFF8A8A8E))),
                       ],
                     ),
                   ),
@@ -111,39 +123,25 @@ class _DashboardWidgetState extends State<DashboardWidget> {
               LayoutBuilder(builder: (context, constraints) {
                 final isWide = constraints.maxWidth > 900;
                 final cards = [
-                  LicensePlateCard(data: _licensePlateData, onSearch: _showSearchDialog),
+                  LicensePlateCard(
+                      data: _licensePlateData, onSearch: _showSearchDialog),
                   AccidentDetectionCard(event: _accidentEvent),
                   FightingDetectionCard(event: _fightingEvent),
                 ];
                 return isWide
                     ? Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: cards.expand((c) => [Expanded(child: c), const SizedBox(width: 16)]).toList()..removeLast(),
+                        children: cards
+                            .expand((c) =>
+                                [Expanded(child: c), const SizedBox(width: 16)])
+                            .toList()
+                          ..removeLast(),
                       )
                     : Column(
-                        children: cards.expand((c) => [c, const SizedBox(height: 16)]).toList()..removeLast(),
-                      );
-              }),
-              const SizedBox(height: 24),
-
-              // Stats Row
-              LayoutBuilder(builder: (context, constraints) {
-                final statCards = [
-                  StatCard(label: context.tr('dashboard_ai.stats.cameras_online', fallback: 'กล้องออนไลน์'), value: _systemStats.camerasOnline.toString(), icon: Icons.videocam, color: const Color(0xFF007AFF)),
-                  StatCard(label: context.tr('dashboard_ai.stats.alerts_today', fallback: 'การแจ้งเตือนวันนี้'), value: _systemStats.alertsToday.toString(), icon: Icons.notifications_outlined, color: const Color(0xFFFF9500)),
-                  StatCard(label: context.tr('dashboard_ai.stats.system_uptime', fallback: 'เวลาทำงานระบบ'), value: _systemStats.formattedUptime, icon: Icons.check_circle_outline, color: const Color(0xFF34C759)),
-                  StatCard(label: context.tr('dashboard_ai.stats.storage_used', fallback: 'พื้นที่จัดเก็บที่ใช้'), value: _systemStats.formattedStorage, icon: Icons.storage_outlined, color: const Color(0xFFFF3B30)),
-                ];
-                return constraints.maxWidth > 600
-                    ? Row(children: statCards.expand((c) => [Expanded(child: c), const SizedBox(width: 16)]).toList()..removeLast())
-                    : GridView.count(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        crossAxisCount: 2,
-                        mainAxisSpacing: 16,
-                        crossAxisSpacing: 16,
-                        childAspectRatio: 1.5,
-                        children: statCards,
+                        children: cards
+                            .expand((c) => [c, const SizedBox(height: 16)])
+                            .toList()
+                          ..removeLast(),
                       );
               }),
             ],
