@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '/core/i18n/i18n.dart';
 import '../widgets/hls_player.dart'; // HlsPlayer
 import '../command_view_model.dart';
 import 'command_tile_widgets.dart';
@@ -77,8 +78,12 @@ class _AccidentOverlayState extends State<AccidentOverlay>
                     const Icon(Icons.warning_amber_rounded,
                         color: Colors.white, size: 10),
                     const SizedBox(width: 3),
-                                    Text(
-                                      'อุบัติเหตุ  ${_formatTs(widget.timestamp)}',
+                    Text(
+                      context.tr(
+                        'command.accident_badge',
+                        params: {'time': _formatTs(widget.timestamp)},
+                        fallback: 'อุบัติเหตุ  ${_formatTs(widget.timestamp)}',
+                      ),
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 8,
@@ -133,7 +138,11 @@ class AccidentDialog extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'ตรวจพบอุบัติเหตุ - ${camera.name}',
+                    context.tr(
+                      'command.accident_dialog_title',
+                      params: {'camera': camera.name},
+                      fallback: 'ตรวจพบอุบัติเหตุ - ${camera.name}',
+                    ),
                     style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -184,7 +193,11 @@ class AccidentDialog extends StatelessWidget {
               padding:
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Text(
-                'ตรวจพบเมื่อ: $timestamp',
+                context.tr(
+                  'command.accident_detected_at',
+                  params: {'time': timestamp},
+                  fallback: 'ตรวจพบเมื่อ: $timestamp',
+                ),
                 style: const TextStyle(color: Colors.white54, fontSize: 12),
                 textAlign: TextAlign.center,
               ),
@@ -201,10 +214,98 @@ class AccidentDialog extends StatelessWidget {
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8)),
               ),
-              child: const Text('ปิด'),
+              child: Text(context.tr('common.close', fallback: 'ปิด')),
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class AccidentIncidentBanner extends StatelessWidget {
+  final int count;
+  final String cameraName;
+  final String? timestamp;
+  final VoidCallback onOpen;
+
+  const AccidentIncidentBanner({
+    Key? key,
+    required this.count,
+    required this.cameraName,
+    required this.timestamp,
+    required this.onOpen,
+  }) : super(key: key);
+
+  String _formatTs(String? raw) {
+    if (raw == null || raw.isEmpty) return '-';
+    final dt = DateTime.tryParse(raw);
+    if (dt == null) return raw;
+    final local = dt.toLocal();
+    return '${local.hour.toString().padLeft(2, '0')}:'
+        '${local.minute.toString().padLeft(2, '0')}:'
+        '${local.second.toString().padLeft(2, '0')}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: onOpen,
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 640),
+            margin: const EdgeInsets.symmetric(horizontal: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFB91C1C).withOpacity(0.93),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.white24),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.notification_important_rounded,
+                    color: Colors.white, size: 18),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    context.tr(
+                      'command.accident_banner_summary',
+                      params: {
+                        'count': count.toString(),
+                        'camera': cameraName,
+                        'time': _formatTs(timestamp),
+                      },
+                      fallback:
+                          'พบอุบัติเหตุ $count จุด | ล่าสุด: $cameraName เวลา ${_formatTs(timestamp)}',
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  context.tr(
+                    'command.accident_banner_action',
+                    fallback: 'ดูรายละเอียด',
+                  ),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

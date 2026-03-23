@@ -305,13 +305,61 @@ class _CommandWidgetState extends State<CommandWidget> {
         if (a is! Map<String, dynamic>) continue;
         final cameraId = a['cameraId']?.toString();
         if (cameraId == null || cameraId.isEmpty) continue;
-        final ts =
-            DateTime.tryParse(a['timestamp']?.toString() ?? '');
+        final ts = _parseAccidentTimestamp(a);
         if (ts != null && now.difference(ts).inMinutes >= 5) continue;
-        if (!fresh.containsKey(cameraId)) fresh[cameraId] = a;
+        final prev = fresh[cameraId];
+        if (prev == null) {
+          fresh[cameraId] = a;
+          continue;
+        }
+        final prevTs = _parseAccidentTimestamp(prev);
+        if (ts != null && (prevTs == null || ts.isAfter(prevTs))) {
+          fresh[cameraId] = a;
+        }
       }
       if (mounted) setState(() => _latestAccidents = fresh);
     } catch (_) {}
+  }
+
+  DateTime? _parseAccidentTimestamp(Map<String, dynamic> accident) {
+    final raw = accident['timestamp']?.toString() ?? '';
+    return DateTime.tryParse(raw)?.toLocal();
+  }
+
+  Map<String, dynamic>? _latestAccidentEvent() {
+    Map<String, dynamic>? latest;
+    DateTime? latestTs;
+    for (final event in _latestAccidents.values) {
+      final ts = _parseAccidentTimestamp(event);
+      if (latest == null) {
+        latest = event;
+        latestTs = ts;
+        continue;
+      }
+      if (ts != null && (latestTs == null || ts.isAfter(latestTs))) {
+        latest = event;
+        latestTs = ts;
+      }
+    }
+    return latest;
+  }
+
+  CameraInfo? _findCameraById(String cameraId) {
+    for (final cam in _cameras) {
+      if (cam.id == cameraId) return cam;
+    }
+    return null;
+  }
+
+  void _openAccidentDialog(Map<String, dynamic> accident) {
+    final cameraId = accident['cameraId']?.toString() ?? '';
+    final camera = cameraId.isNotEmpty ? _findCameraById(cameraId) : null;
+    if (camera == null) return;
+
+    showDialog(
+      context: context,
+      builder: (_) => AccidentDialog(camera: camera, accident: accident),
+    );
   }
 
   // ---------------------------------------------------------------------------
@@ -582,11 +630,7 @@ class _CommandWidgetState extends State<CommandWidget> {
         Positioned.fill(
           child: GestureDetector(
             behavior: HitTestBehavior.translucent,
-            onTap: () => showDialog(
-              context: context,
-              builder: (_) => AccidentDialog(
-                  camera: cam, accident: accident),
-            ),
+            onTap: () => _openAccidentDialog(accident),
             child: AccidentOverlay(
                 timestamp: accident['timestamp']?.toString()),
           ),
@@ -602,6 +646,10 @@ class _CommandWidgetState extends State<CommandWidget> {
   @override
   Widget build(BuildContext context) {
     final totalTiles = gridSize * gridSize;
+    final latestAccident = _latestAccidentEvent();
+    final latestCameraId = latestAccident?['cameraId']?.toString() ?? '';
+    final latestCamera =
+        latestCameraId.isNotEmpty ? _findCameraById(latestCameraId) : null;
 
     return SizedBox(
       width: widget.width,
@@ -760,6 +808,20 @@ class _CommandWidgetState extends State<CommandWidget> {
                   }
                 },
               ),
+
+              // ── Top incident strip ───────────────────────────────────────
+              if (latestAccident != null && _focusedCamera == null)
+                Positioned(
+                  top: 58,
+                  left: 0,
+                  right: 0,
+                  child: AccidentIncidentBanner(
+                    count: _latestAccidents.length,
+                    cameraName: latestCamera?.name ?? latestCameraId,
+                    timestamp: latestAccident['timestamp']?.toString(),
+                    onOpen: () => _openAccidentDialog(latestAccident),
+                  ),
+                ),
 
               // ── Edit mode banner ─────────────────────────────────────────
               if (_isEditMode) const EditModeBanner(),
