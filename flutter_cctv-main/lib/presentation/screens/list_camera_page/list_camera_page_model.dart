@@ -1,4 +1,4 @@
-import 'package:central_command/presentation/widgets/nav/models/nav_bar_main_model.dart';
+import 'package:central_command/presentation/widgets/nav/nav_bar_main_widget.dart';
 import '/presentation/screens/list_camera_page/widgets/views/addnewcamera_widget.dart';
 ///import 'package:central_command/presentation/widgets /nav_bar_main_widget.dart';
 import '/utils/flutter_flow/theme.dart';

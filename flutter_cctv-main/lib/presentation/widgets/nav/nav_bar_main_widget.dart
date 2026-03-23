@@ -1,14 +1,30 @@
+// presentation/widgets/nav_bar_main_widget.dart
+// รวม widget + model ไว้ในไฟล์เดียว
+
 import '/utils/flutter_flow/theme.dart';
 import '/utils/flutter_flow/util.dart';
 import '/utils/flutter_flow/widgets.dart';
 import '/core/i18n/i18n.dart';
-import 'dart:ui';
 import '/index.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import '../models/nav_bar_main_model.dart';
-export '../models/nav_bar_main_model.dart';
+
+// =============================================================================
+// Model
+// =============================================================================
+
+class NavBarMainModel extends FlutterFlowModel<NavBarMainWidget> {
+  @override
+  void initState(BuildContext context) {}
+
+  @override
+  void dispose() {}
+}
+
+// =============================================================================
+// Widget
+// =============================================================================
 
 class NavBarMainWidget extends StatefulWidget {
   const NavBarMainWidget({super.key});
@@ -20,7 +36,6 @@ class NavBarMainWidget extends StatefulWidget {
 class _NavBarMainWidgetState extends State<NavBarMainWidget> {
   late NavBarMainModel _model;
 
-  // Track which nav item is hovered
   String? _hoveredItem;
 
   static const _primaryColor = Color(0xFF4B39EF);
@@ -51,6 +66,11 @@ class _NavBarMainWidgetState extends State<NavBarMainWidget> {
       icon: Icons.map_outlined,
       routeName: 'MapView',
     ),
+    _NavItemData(
+      labelKey: 'nav.dashboard_ai',
+      icon: Icons.auto_graph_outlined,
+      routeName: 'DashboardAI',
+    ),
   ];
 
   @override
@@ -72,9 +92,8 @@ class _NavBarMainWidgetState extends State<NavBarMainWidget> {
     super.dispose();
   }
 
-  String _currentRoute(BuildContext context) {
-    return GoRouterState.of(context).name ?? '';
-  }
+  String _currentRoute(BuildContext context) =>
+      GoRouterState.of(context).name ?? '';
 
   void _navigate(BuildContext context, String routeName) {
     context.pushNamed(
@@ -134,7 +153,8 @@ class _NavBarMainWidgetState extends State<NavBarMainWidget> {
         // ── Divider ──────────────────────────────────────────────────────────
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Container(width: 1, height: 20, color: const Color(0xFFE5E7EB)),
+          child: Container(
+              width: 1, height: 20, color: const Color(0xFFE5E7EB)),
         ),
 
         // ── Nav links ────────────────────────────────────────────────────────
@@ -152,8 +172,8 @@ class _NavBarMainWidgetState extends State<NavBarMainWidget> {
                   isActive: isActive,
                   isHovered: isHovered,
                   primaryColor: _primaryColor,
-                  onHoverChanged: (v) => setState(
-                      () => _hoveredItem = v ? item.routeName : null),
+                  onHoverChanged: (v) =>
+                      setState(() => _hoveredItem = v ? item.routeName : null),
                   onTap: () => _navigate(context, item.routeName),
                 ),
               );
@@ -163,23 +183,29 @@ class _NavBarMainWidgetState extends State<NavBarMainWidget> {
 
         // ── Profile / Logout ─────────────────────────────────────────────────
         _ProfileButton(primaryColor: _primaryColor),
-
       ],
     );
   }
 }
 
-// ─── Data class ──────────────────────────────────────────────────────────────
+// =============================================================================
+// _NavItemData — immutable data class
+// =============================================================================
 
 class _NavItemData {
   final String labelKey;
   final IconData icon;
   final String routeName;
-  const _NavItemData(
-      {required this.labelKey, required this.icon, required this.routeName});
+  const _NavItemData({
+    required this.labelKey,
+    required this.icon,
+    required this.routeName,
+  });
 }
 
-// ─── Nav item widget (stateless with hover) ───────────────────────────────────
+// =============================================================================
+// _NavItemWidget — nav link พร้อม hover animation
+// =============================================================================
 
 class _NavItemWidget extends StatelessWidget {
   final _NavItemData data;
@@ -202,8 +228,6 @@ class _NavItemWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final showHighlight = isActive || isHovered;
-
     return MouseRegion(
       onEnter: (_) => onHoverChanged(true),
       onExit: (_) => onHoverChanged(false),
@@ -212,7 +236,8 @@ class _NavItemWidget extends StatelessWidget {
         onTap: onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          padding:
+              const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
             color: isActive
                 ? primaryColor.withOpacity(0.1)
@@ -246,7 +271,8 @@ class _NavItemWidget extends StatelessWidget {
                           ? const Color(0xFF111827)
                           : const Color(0xFF4B5563),
                   fontSize: AppTextStyles.navItem,
-                  fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                  fontWeight:
+                      isActive ? FontWeight.w700 : FontWeight.w500,
                   letterSpacing: -0.1,
                 ),
               ),
@@ -258,7 +284,9 @@ class _NavItemWidget extends StatelessWidget {
   }
 }
 
-// ─── Profile / Logout button ──────────────────────────────────────────────────
+// =============================================================================
+// _ProfileButton — avatar + popup logout menu
+// =============================================================================
 
 class _ProfileButton extends StatefulWidget {
   final Color primaryColor;
@@ -297,7 +325,8 @@ class _ProfileButtonState extends State<_ProfileButton> {
         itemBuilder: (_) => [
           PopupMenuItem<String>(
             enabled: false,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -322,7 +351,8 @@ class _ProfileButtonState extends State<_ProfileButton> {
           const PopupMenuDivider(),
           PopupMenuItem<String>(
             value: 'logout',
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             child: Row(
               children: [
                 const Icon(Icons.logout_rounded,
@@ -342,15 +372,17 @@ class _ProfileButtonState extends State<_ProfileButton> {
         ],
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          padding:
+              const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
             color: _hovered
                 ? widget.primaryColor.withOpacity(0.07)
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color:
-                  _hovered ? widget.primaryColor.withOpacity(0.3) : const Color(0xFFE5E7EB),
+              color: _hovered
+                  ? widget.primaryColor.withOpacity(0.3)
+                  : const Color(0xFFE5E7EB),
             ),
           ),
           child: Row(
@@ -373,8 +405,8 @@ class _ProfileButtonState extends State<_ProfileButton> {
                 ),
               ),
               const SizedBox(width: 4),
-              Icon(Icons.keyboard_arrow_down_rounded,
-                  size: 14, color: const Color(0xFF9CA3AF)),
+              const Icon(Icons.keyboard_arrow_down_rounded,
+                  size: 14, color: Color(0xFF9CA3AF)),
             ],
           ),
         ),

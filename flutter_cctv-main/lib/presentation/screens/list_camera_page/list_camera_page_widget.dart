@@ -5,7 +5,7 @@ import '/data/services/index.dart';
 import '/presentation/screens/list_camera_page/widgets/views/addnewcamera_widget.dart';
 import '/presentation/screens/list_camera_page/widgets/views/detailscamera_widget.dart';
 import '/presentation/screens/list_camera_page/widgets/views/editdatacamera_widget.dart';
-import '/presentation/widgets/nav/views/nav_bar_main_widget.dart';
+import '../../widgets/nav/nav_bar_main_widget.dart';
 import '/core/i18n/i18n.dart';
 import '../collection/widgets/category_chip.dart';
 import 'widgets/status_chip.dart';

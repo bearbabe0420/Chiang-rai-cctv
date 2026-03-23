@@ -1,4 +1,4 @@
-import '/presentation/widgets/nav/views/nav_bar_main_widget.dart';
+import '../../widgets/nav/nav_bar_main_widget.dart';
 import '/utils/flutter_flow/util.dart';
 import 'searchlicenseplate_widget.dart' show ListPlatePageWidget;
 import 'package:flutter/material.dart';

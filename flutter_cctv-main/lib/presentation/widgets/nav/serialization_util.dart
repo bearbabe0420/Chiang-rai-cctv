@@ -3,9 +3,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:from_css_color/from_css_color.dart';
 
-import '../models/lat_lng.dart';
-import '../models/place.dart';
-import '../models/uploaded_file.dart';
+import '../../../utils/models/lat_lng.dart';
+import '../../../utils/models/place.dart';
+import '../../../utils/models/uploaded_file.dart';
 
 /// SERIALIZATION HELPERS
 

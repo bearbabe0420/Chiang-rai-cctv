@@ -11,4 +11,4 @@ export '../screens/map_view/widgets/views/map_view_component_widget.dart' show M
 export '../screens/map_view/widgets/views/marker_info_popup_widget.dart' show MarkerInfoPopupWidget;
 
 // Nav widgets
-export 'nav/views/nav_bar_main_widget.dart' show NavBarMainWidget;
+export 'nav/nav_bar_main_widget.dart' show NavBarMainWidget;

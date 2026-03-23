@@ -25,7 +25,7 @@ export 'dart:typed_data' show Uint8List;
 export 'dart:convert' show jsonEncode, jsonDecode;
 export 'package:intl/intl.dart';
 export 'package:page_transition/page_transition.dart';
-export '../nav/nav.dart';
+export '../../presentation/widgets/nav/nav.dart';
 export '../app_text_styles.dart';
 
 T valueOrDefault<T>(T? value, T defaultValue) =>
