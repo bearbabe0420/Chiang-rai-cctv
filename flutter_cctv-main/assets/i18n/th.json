@@ -98,6 +98,29 @@
     "search_hint": "ค้นหากล้อง...",
     "import_files": "นำเข้าไฟล์"
   },
+  "dashboard_ai": {
+    "title": "แดชบอร์ดเฝ้าระวัง AI",
+    "subtitle": "สถานะการตรวจจับแบบเรียลไทม์จากระบบกล้องอัจฉริยะ",
+    "cards": {
+      "license_plate_detection": "การตรวจจับป้ายทะเบียน",
+      "total_plates_detected": "ป้ายทะเบียนที่ตรวจพบทั้งหมด",
+      "search_license_plate": "ค้นหาป้ายทะเบียน",
+      "accident_detection": "การตรวจจับอุบัติเหตุ",
+      "fighting_detection": "การตรวจจับการทะเลาะวิวาท",
+      "latest_snapshot": "ภาพล่าสุด"
+    },
+    "fields": {
+      "camera": "กล้อง",
+      "last_detection": "ตรวจพบล่าสุด",
+      "today_count": "จำนวนวันนี้"
+    },
+    "stats": {
+      "cameras_online": "กล้องออนไลน์",
+      "alerts_today": "การแจ้งเตือนวันนี้",
+      "system_uptime": "เวลาทำงานระบบ",
+      "storage_used": "พื้นที่จัดเก็บที่ใช้"
+    }
+  },
   "legacy_plate_table": {
     "empty": "ไม่พบข้อมูล",
     "search_hint": "ค้นหา...",
@@ -130,7 +153,24 @@
     "live": "สด"
   },
   "command": {
-    "stream_unavailable": "สตรีมไม่พร้อมใช้งาน"
+    "stream_unavailable": "สตรีมไม่พร้อมใช้งาน",
+    "starting_stream": "กำลังเริ่มสตรีม...",
+    "starting_stream_slow": "ใช้เวลานานกว่าปกติ...",
+    "accident_badge": "อุบัติเหตุ  {time}",
+    "accident_dialog_title": "ตรวจพบอุบัติเหตุ - {camera}",
+    "accident_detected_at": "ตรวจพบเมื่อ: {time}",
+    "accident_banner_summary": "พบอุบัติเหตุ {count} จุด | ล่าสุด: {camera} เวลา {time}",
+    "accident_banner_action": "ดูรายละเอียด",
+    "edit_mode_stream_paused": "หยุดสตรีมชั่วคราวในโหมดแก้ไข",
+    "empty_slot": "ช่องว่าง {index}",
+    "start_hls_missing_url": "เซิร์ฟเวอร์ไม่ส่งลิงก์ HLS",
+    "start_hls_no_rtsp": "ยังไม่ได้ตั้งค่า RTSP URL สำหรับกล้องนี้",
+    "start_hls_bad_request": "คำขอไม่ถูกต้อง: {message}",
+    "start_hls_bad_request_short": "คำขอไม่ถูกต้อง (400): {message}",
+    "start_hls_http_error": "HTTP {statusCode}: {message}",
+    "start_hls_timeout": "การเชื่อมต่อหมดเวลา - ไม่สามารถติดต่อเซิร์ฟเวอร์ได้",
+    "start_hls_unexpected": "เกิดข้อผิดพลาดที่ไม่คาดคิด: {error}",
+    "start_hls_retry_exhausted": "เริ่มสตรีมไม่สำเร็จหลังลองใหม่ {attempts} ครั้ง: {reason}"
   },
   "map": {
     "loading": "กำลังโหลดกล้อง...",
