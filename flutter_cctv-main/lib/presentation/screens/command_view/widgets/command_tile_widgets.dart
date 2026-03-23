@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '/core/i18n/i18n.dart';
 import '../widgets/hls_player.dart'; // HlsPlayer
 import '../command_view_model.dart';
 
@@ -59,7 +60,15 @@ class _StreamLoadingTileState extends State<StreamLoadingTile> {
           ),
           const SizedBox(height: 6),
           Text(
-            _isSlow ? 'ใช้เวลานานกว่าปกติ…' : 'กำลังเริ่มสตรีม…',
+            _isSlow
+                ? context.tr(
+                    'command.starting_stream_slow',
+                    fallback: 'Taking longer than usual...',
+                  )
+                : context.tr(
+                    'command.starting_stream',
+                    fallback: 'Starting stream...',
+                  ),
             style: TextStyle(
               color: Colors.white.withOpacity(0.55),
               fontSize: 9,
@@ -149,7 +158,10 @@ class _VideoTileState extends State<VideoTile> {
                                 }
                                 return _ErrorTile(
                                     reason: result?.error ??
-                                        'สตรีมไม่พร้อมใช้งาน');
+                                        context.tr(
+                                          'command.stream_unavailable',
+                                          fallback: 'Stream unavailable',
+                                        ));
                               }
                               return HlsPlayer(
                                 key: ValueKey(
@@ -226,7 +238,10 @@ class _VideoTileState extends State<VideoTile> {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-              'หยุดสตรีมชั่วคราวในโหมดแก้ไข',
+                context.tr(
+                  'command.edit_mode_stream_paused',
+                  fallback: 'Stream paused during edit mode',
+                ),
                 style: TextStyle(
                     color: Colors.white.withOpacity(0.6), fontSize: 9),
                 textAlign: TextAlign.center,
@@ -280,7 +295,10 @@ class _ErrorTile extends StatelessWidget {
           Icon(icon, color: accent, size: 26),
           const SizedBox(height: 6),
           Text(
-            'สตรีมไม่พร้อมใช้งาน',
+            context.tr(
+              'command.stream_unavailable',
+              fallback: 'Stream unavailable',
+            ),
             style: TextStyle(
               color: accent,
               fontSize: 10,
@@ -333,7 +351,11 @@ class _NoStreamSlot extends StatelessWidget {
               color: Colors.white24, size: 32),
           const SizedBox(height: 8),
           Text(
-            'ช่องว่าง ${index + 1}',
+            context.tr(
+              'command.empty_slot',
+              params: {'index': (index + 1).toString()},
+              fallback: 'Empty slot ${index + 1}',
+            ),
             style: const TextStyle(color: Colors.white54, fontSize: 10),
             textAlign: TextAlign.center,
           ),

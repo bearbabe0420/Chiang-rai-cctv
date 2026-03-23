@@ -2,6 +2,7 @@
 import '/utils/flutter_flow/theme.dart';
 import '/utils/flutter_flow/util.dart';
 import '/utils/flutter_flow/widgets.dart';
+import '/core/i18n/i18n.dart';
 import '../../widgets/nav/nav_bar_main_widget.dart';
 import '../command_view/widgets/hls_player.dart' as custom_widgets;
 import 'package:flutter/material.dart';
@@ -129,6 +130,8 @@ class CommandWidget extends StatefulWidget {
 }
 
 class _CommandWidgetState extends State<CommandWidget> {
+  static const int _maxHlsStartAttempts = 3;
+
   // ── Grid state ──────────────────────────────────────────────────────────────
   int gridSize = 2;
   final Map<String, Future<HlsResult>> _hlsCache = {};
@@ -391,7 +394,89 @@ class _CommandWidgetState extends State<CommandWidget> {
     return _hlsCache[key] ??= _startHls(cam);
   }
 
+  String _tr(
+    String key, {
+    Map<String, String>? params,
+    String? fallback,
+  }) {
+    return context.tr(key, params: params, fallback: fallback);
+  }
+
+  Duration _retryDelayForAttempt(int attempt) {
+    final ms = 600 * (1 << (attempt - 1));
+    return Duration(milliseconds: ms);
+  }
+
   Future<HlsResult> _startHls(CameraInfo cam) async {
+    HlsResult? lastFailure;
+    bool lastFailureRetryable = false;
+
+    for (int attempt = 1; attempt <= _maxHlsStartAttempts; attempt++) {
+      final attemptResult = await _startHlsOnce(cam);
+      if (attemptResult.url != null && attemptResult.url!.isNotEmpty) {
+        return attemptResult;
+      }
+
+      lastFailure = attemptResult;
+      lastFailureRetryable = _isRetryableHlsError(attemptResult.error);
+      final hasMoreAttempts = attempt < _maxHlsStartAttempts;
+
+      if (!lastFailureRetryable || !hasMoreAttempts) {
+        if (lastFailureRetryable && attempt > 1) {
+          return HlsResult(
+            error: _tr(
+              'command.start_hls_retry_exhausted',
+              params: {
+                'attempts': attempt.toString(),
+                'reason': attemptResult.error ??
+                    _tr(
+                      'command.stream_unavailable',
+                      fallback: 'Stream unavailable',
+                    ),
+              },
+              fallback:
+                  'Failed to start stream after $attempt attempts: ${attemptResult.error ?? 'Stream unavailable'}',
+            ),
+          );
+        }
+        return attemptResult;
+      }
+
+      await Future.delayed(_retryDelayForAttempt(attempt));
+    }
+
+    return lastFailure ??
+        HlsResult(
+          error: _tr(
+            'command.stream_unavailable',
+            fallback: 'Stream unavailable',
+          ),
+        );
+  }
+
+  bool _isRetryableHlsError(String? error) {
+    if (error == null || error.isEmpty) return true;
+    final msg = error.toLowerCase();
+    if (msg.contains('http 408') ||
+        msg.contains('http 429') ||
+        msg.contains('http 500') ||
+        msg.contains('http 502') ||
+        msg.contains('http 503') ||
+        msg.contains('http 504')) {
+      return true;
+    }
+    if (msg.contains('timeout') ||
+        msg.contains('หมดเวลา') ||
+        msg.contains('socketexception') ||
+        msg.contains('clientexception') ||
+        msg.contains('failed host lookup') ||
+        msg.contains('connection closed')) {
+      return true;
+    }
+    return false;
+  }
+
+  Future<HlsResult> _startHlsOnce(CameraInfo cam) async {
     final uri = Uri.parse('$kApiBaseUrl/api/stream/hls/start');
     try {
       final resp = await http
@@ -407,7 +492,12 @@ class _CommandWidgetState extends State<CommandWidget> {
         String? hlsUrl =
             obj is Map ? obj['hlsUrl'] as String? : null;
         if (hlsUrl == null || hlsUrl.isEmpty) {
-          return const HlsResult(error: 'เซิร์ฟเวอร์ไม่ส่งลิงก์ HLS');
+          return HlsResult(
+            error: _tr(
+              'command.start_hls_missing_url',
+              fallback: 'Server did not return an HLS URL',
+            ),
+          );
         }
         final finalUrl =
             hlsUrl.startsWith('http') ? hlsUrl : '$kApiBaseUrl$hlsUrl';
@@ -417,28 +507,63 @@ class _CommandWidgetState extends State<CommandWidget> {
           final err = jsonDecode(resp.body);
           final msg = err['error']?.toString() ?? resp.body;
           if (msg.contains('No RTSP URL configured')) {
-            return const HlsResult(
-                error: 'ยังไม่ได้ตั้งค่า RTSP URL สำหรับกล้องนี้');
+            return HlsResult(
+              error: _tr(
+                'command.start_hls_no_rtsp',
+                fallback: 'RTSP URL is not configured for this camera',
+              ),
+            );
           }
-          return HlsResult(error: 'คำขอไม่ถูกต้อง: $msg');
-        } catch (_) {
           return HlsResult(
-              error:
-                  'คำขอไม่ถูกต้อง (400): ${resp.body.length > 80 ? resp.body.substring(0, 80) : resp.body}');
+            error: _tr(
+              'command.start_hls_bad_request',
+              params: {'message': msg},
+              fallback: 'Bad request: $msg',
+            ),
+          );
+        } catch (_) {
+          final shortBody = resp.body.length > 80
+              ? resp.body.substring(0, 80)
+              : resp.body;
+          return HlsResult(
+            error: _tr(
+              'command.start_hls_bad_request_short',
+              params: {'message': shortBody},
+              fallback: 'Bad request (400): $shortBody',
+            ),
+          );
         }
       } else {
+        final shortBody = resp.body.length > 80
+            ? resp.body.substring(0, 80)
+            : resp.body;
         return HlsResult(
-            error:
-                'HTTP ${resp.statusCode}: ${resp.body.length > 80 ? resp.body.substring(0, 80) : resp.body}');
+          error: _tr(
+            'command.start_hls_http_error',
+            params: {
+              'statusCode': resp.statusCode.toString(),
+              'message': shortBody,
+            },
+            fallback: 'HTTP ${resp.statusCode}: $shortBody',
+          ),
+        );
       }
     } catch (e) {
-      final removeKey = cam.id.isNotEmpty ? cam.id : cam.name;
-      _hlsCache.remove(removeKey);
       if (e.toString().contains('TimeoutException')) {
-        return const HlsResult(
-            error: 'การเชื่อมต่อหมดเวลา - ไม่สามารถติดต่อเซิร์ฟเวอร์ได้');
+        return HlsResult(
+          error: _tr(
+            'command.start_hls_timeout',
+            fallback: 'Connection timed out - could not contact server',
+          ),
+        );
       }
-      return HlsResult(error: 'เกิดข้อผิดพลาดที่ไม่คาดคิด: $e');
+      return HlsResult(
+        error: _tr(
+          'command.start_hls_unexpected',
+          params: {'error': e.toString()},
+          fallback: 'Unexpected error: $e',
+        ),
+      );
     }
   }
 

@@ -2,6 +2,7 @@ import '/utils/flutter_flow_theme.dart';
 import '/utils/flutter_flow_icon_button.dart';
 import '/utils/flutter_flow_widgets.dart';
 import '/core/i18n/i18n.dart';
+import '../../list_camera_page/widgets/toolbar.dart';
 import 'package:flutter/material.dart';
 
 /// Toolbar: SearchBar + Refresh + Manage Categories
@@ -30,44 +31,11 @@ class CollectionToolbar extends StatelessWidget {
       children: [
         // ── Search bar ─────────────────────────────────────────────────────
         Expanded(
-          child: SizedBox(
-            height: 44,
-            child: TextField(
-              controller: textController,
-              focusNode: focusNode,
-              onChanged: onSearchChanged,
-              decoration: InputDecoration(
-                hintText: context.tr('collection.search_hint'),
-                hintStyle: const TextStyle(
-                    color: Color(0xFF9CA3AF), fontSize: 14),
-                prefixIcon: const Icon(Icons.search,
-                    color: Color(0xFF9CA3AF), size: 20),
-                suffixIcon: (textController?.text.isNotEmpty ?? false)
-                    ? IconButton(
-                        icon: const Icon(Icons.close,
-                            size: 18, color: Color(0xFF9CA3AF)),
-                        onPressed: onClearSearch,
-                      )
-                    : null,
-                filled: true,
-                fillColor: const Color(0xFFF9FAFB),
-                contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 14, vertical: 10),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide:
-                      BorderSide(color: FlutterFlowTheme.of(context).primary),
-                ),
-              ),
-            ),
+          child: CameraSearchBar(
+            controller: textController,
+            focusNode: focusNode,
+            onChanged: onSearchChanged,
+            onClear: onClearSearch,
           ),
         ),
         const SizedBox(width: 16),

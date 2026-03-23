@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '/core/i18n/i18n.dart';
 
 class SnapshotSection extends StatelessWidget {
   final String? imageUrl;
@@ -11,8 +12,13 @@ class SnapshotSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('LATEST SNAPSHOT',
-            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF8A8A8E), letterSpacing: 0.8)),
+        Text(
+          context.tr(
+            'dashboard_ai.cards.latest_snapshot',
+            fallback: 'ภาพล่าสุด',
+          ),
+          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF8A8A8E), letterSpacing: 0.8),
+        ),
         const SizedBox(height: 10),
         ClipRRect(
           borderRadius: BorderRadius.circular(12),

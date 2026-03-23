@@ -72,6 +72,29 @@ class _CollectionWidgetState extends State<CollectionWidget> {
 
       if (response.succeeded) {
         final dataList = CameraService().parseDataList(response.jsonBody) ?? [];
+        final q = search.toLowerCase();
+        if (q.isNotEmpty) {
+          dataList.sort((a, b) {
+            final nameA =
+                (getJsonField(a, r'$.name')?.toString() ?? '').toLowerCase();
+            final nameB =
+                (getJsonField(b, r'$.name')?.toString() ?? '').toLowerCase();
+            final aExact = nameA == q;
+            final bExact = nameB == q;
+            if (aExact && !bExact) return -1;
+            if (!aExact && bExact) return 1;
+            final aStarts = nameA.startsWith(q);
+            final bStarts = nameB.startsWith(q);
+            if (aStarts && !bStarts) return -1;
+            if (!aStarts && bStarts) return 1;
+            final aContains = nameA.contains(q);
+            final bContains = nameB.contains(q);
+            if (aContains && !bContains) return -1;
+            if (!aContains && bContains) return 1;
+            return nameA.compareTo(nameB);
+          });
+        }
+
         final meta = getJsonField(response.jsonBody, r'$.meta');
         safeSetState(() {
           _model.listOfCameras = dataList;
@@ -96,8 +119,6 @@ class _CollectionWidgetState extends State<CollectionWidget> {
           _model.isLoading = false;
         });
       }
-
-      _model.paginatedDataTableController.paginatorController.goToFirstPage();
     } catch (e) {
       debugPrint('Error fetching cameras: $e');
       if (mounted) safeSetState(() => _model.isLoading = false);
@@ -107,7 +128,7 @@ class _CollectionWidgetState extends State<CollectionWidget> {
   void _onSearchChanged(String value) {
     EasyDebounce.debounce(
       'camera_search',
-      const Duration(milliseconds: 500),
+      const Duration(milliseconds: 400),
       () => _fetchCameras(page: 1, search: value),
     );
   }
