@@ -2,6 +2,7 @@
 import '/utils/flutter_flow/theme.dart';
 import '/utils/flutter_flow/util.dart';
 import '/utils/flutter_flow/widgets.dart';
+import '/core/i18n/i18n.dart';
 import '../../widgets/nav/nav_bar_main_widget.dart';
 import '../command_view/widgets/hls_player.dart' as custom_widgets;
 import 'package:flutter/material.dart';
@@ -129,6 +130,8 @@ class CommandWidget extends StatefulWidget {
 }
 
 class _CommandWidgetState extends State<CommandWidget> {
+  static const int _maxHlsStartAttempts = 3;
+
   // ── Grid state ──────────────────────────────────────────────────────────────
   int gridSize = 2;
   final Map<String, Future<HlsResult>> _hlsCache = {};
@@ -302,13 +305,61 @@ class _CommandWidgetState extends State<CommandWidget> {
         if (a is! Map<String, dynamic>) continue;
         final cameraId = a['cameraId']?.toString();
         if (cameraId == null || cameraId.isEmpty) continue;
-        final ts =
-            DateTime.tryParse(a['timestamp']?.toString() ?? '');
+        final ts = _parseAccidentTimestamp(a);
         if (ts != null && now.difference(ts).inMinutes >= 5) continue;
-        if (!fresh.containsKey(cameraId)) fresh[cameraId] = a;
+        final prev = fresh[cameraId];
+        if (prev == null) {
+          fresh[cameraId] = a;
+          continue;
+        }
+        final prevTs = _parseAccidentTimestamp(prev);
+        if (ts != null && (prevTs == null || ts.isAfter(prevTs))) {
+          fresh[cameraId] = a;
+        }
       }
       if (mounted) setState(() => _latestAccidents = fresh);
     } catch (_) {}
+  }
+
+  DateTime? _parseAccidentTimestamp(Map<String, dynamic> accident) {
+    final raw = accident['timestamp']?.toString() ?? '';
+    return DateTime.tryParse(raw)?.toLocal();
+  }
+
+  Map<String, dynamic>? _latestAccidentEvent() {
+    Map<String, dynamic>? latest;
+    DateTime? latestTs;
+    for (final event in _latestAccidents.values) {
+      final ts = _parseAccidentTimestamp(event);
+      if (latest == null) {
+        latest = event;
+        latestTs = ts;
+        continue;
+      }
+      if (ts != null && (latestTs == null || ts.isAfter(latestTs))) {
+        latest = event;
+        latestTs = ts;
+      }
+    }
+    return latest;
+  }
+
+  CameraInfo? _findCameraById(String cameraId) {
+    for (final cam in _cameras) {
+      if (cam.id == cameraId) return cam;
+    }
+    return null;
+  }
+
+  void _openAccidentDialog(Map<String, dynamic> accident) {
+    final cameraId = accident['cameraId']?.toString() ?? '';
+    final camera = cameraId.isNotEmpty ? _findCameraById(cameraId) : null;
+    if (camera == null) return;
+
+    showDialog(
+      context: context,
+      builder: (_) => AccidentDialog(camera: camera, accident: accident),
+    );
   }
 
   // ---------------------------------------------------------------------------
@@ -391,7 +442,89 @@ class _CommandWidgetState extends State<CommandWidget> {
     return _hlsCache[key] ??= _startHls(cam);
   }
 
+  String _tr(
+    String key, {
+    Map<String, String>? params,
+    String? fallback,
+  }) {
+    return context.tr(key, params: params, fallback: fallback);
+  }
+
+  Duration _retryDelayForAttempt(int attempt) {
+    final ms = 600 * (1 << (attempt - 1));
+    return Duration(milliseconds: ms);
+  }
+
   Future<HlsResult> _startHls(CameraInfo cam) async {
+    HlsResult? lastFailure;
+    bool lastFailureRetryable = false;
+
+    for (int attempt = 1; attempt <= _maxHlsStartAttempts; attempt++) {
+      final attemptResult = await _startHlsOnce(cam);
+      if (attemptResult.url != null && attemptResult.url!.isNotEmpty) {
+        return attemptResult;
+      }
+
+      lastFailure = attemptResult;
+      lastFailureRetryable = _isRetryableHlsError(attemptResult.error);
+      final hasMoreAttempts = attempt < _maxHlsStartAttempts;
+
+      if (!lastFailureRetryable || !hasMoreAttempts) {
+        if (lastFailureRetryable && attempt > 1) {
+          return HlsResult(
+            error: _tr(
+              'command.start_hls_retry_exhausted',
+              params: {
+                'attempts': attempt.toString(),
+                'reason': attemptResult.error ??
+                    _tr(
+                      'command.stream_unavailable',
+                      fallback: 'Stream unavailable',
+                    ),
+              },
+              fallback:
+                  'Failed to start stream after $attempt attempts: ${attemptResult.error ?? 'Stream unavailable'}',
+            ),
+          );
+        }
+        return attemptResult;
+      }
+
+      await Future.delayed(_retryDelayForAttempt(attempt));
+    }
+
+    return lastFailure ??
+        HlsResult(
+          error: _tr(
+            'command.stream_unavailable',
+            fallback: 'Stream unavailable',
+          ),
+        );
+  }
+
+  bool _isRetryableHlsError(String? error) {
+    if (error == null || error.isEmpty) return true;
+    final msg = error.toLowerCase();
+    if (msg.contains('http 408') ||
+        msg.contains('http 429') ||
+        msg.contains('http 500') ||
+        msg.contains('http 502') ||
+        msg.contains('http 503') ||
+        msg.contains('http 504')) {
+      return true;
+    }
+    if (msg.contains('timeout') ||
+        msg.contains('หมดเวลา') ||
+        msg.contains('socketexception') ||
+        msg.contains('clientexception') ||
+        msg.contains('failed host lookup') ||
+        msg.contains('connection closed')) {
+      return true;
+    }
+    return false;
+  }
+
+  Future<HlsResult> _startHlsOnce(CameraInfo cam) async {
     final uri = Uri.parse('$kApiBaseUrl/api/stream/hls/start');
     try {
       final resp = await http
@@ -407,7 +540,12 @@ class _CommandWidgetState extends State<CommandWidget> {
         String? hlsUrl =
             obj is Map ? obj['hlsUrl'] as String? : null;
         if (hlsUrl == null || hlsUrl.isEmpty) {
-          return const HlsResult(error: 'เซิร์ฟเวอร์ไม่ส่งลิงก์ HLS');
+          return HlsResult(
+            error: _tr(
+              'command.start_hls_missing_url',
+              fallback: 'Server did not return an HLS URL',
+            ),
+          );
         }
         final finalUrl =
             hlsUrl.startsWith('http') ? hlsUrl : '$kApiBaseUrl$hlsUrl';
@@ -417,28 +555,63 @@ class _CommandWidgetState extends State<CommandWidget> {
           final err = jsonDecode(resp.body);
           final msg = err['error']?.toString() ?? resp.body;
           if (msg.contains('No RTSP URL configured')) {
-            return const HlsResult(
-                error: 'ยังไม่ได้ตั้งค่า RTSP URL สำหรับกล้องนี้');
+            return HlsResult(
+              error: _tr(
+                'command.start_hls_no_rtsp',
+                fallback: 'RTSP URL is not configured for this camera',
+              ),
+            );
           }
-          return HlsResult(error: 'คำขอไม่ถูกต้อง: $msg');
-        } catch (_) {
           return HlsResult(
-              error:
-                  'คำขอไม่ถูกต้อง (400): ${resp.body.length > 80 ? resp.body.substring(0, 80) : resp.body}');
+            error: _tr(
+              'command.start_hls_bad_request',
+              params: {'message': msg},
+              fallback: 'Bad request: $msg',
+            ),
+          );
+        } catch (_) {
+          final shortBody = resp.body.length > 80
+              ? resp.body.substring(0, 80)
+              : resp.body;
+          return HlsResult(
+            error: _tr(
+              'command.start_hls_bad_request_short',
+              params: {'message': shortBody},
+              fallback: 'Bad request (400): $shortBody',
+            ),
+          );
         }
       } else {
+        final shortBody = resp.body.length > 80
+            ? resp.body.substring(0, 80)
+            : resp.body;
         return HlsResult(
-            error:
-                'HTTP ${resp.statusCode}: ${resp.body.length > 80 ? resp.body.substring(0, 80) : resp.body}');
+          error: _tr(
+            'command.start_hls_http_error',
+            params: {
+              'statusCode': resp.statusCode.toString(),
+              'message': shortBody,
+            },
+            fallback: 'HTTP ${resp.statusCode}: $shortBody',
+          ),
+        );
       }
     } catch (e) {
-      final removeKey = cam.id.isNotEmpty ? cam.id : cam.name;
-      _hlsCache.remove(removeKey);
       if (e.toString().contains('TimeoutException')) {
-        return const HlsResult(
-            error: 'การเชื่อมต่อหมดเวลา - ไม่สามารถติดต่อเซิร์ฟเวอร์ได้');
+        return HlsResult(
+          error: _tr(
+            'command.start_hls_timeout',
+            fallback: 'Connection timed out - could not contact server',
+          ),
+        );
       }
-      return HlsResult(error: 'เกิดข้อผิดพลาดที่ไม่คาดคิด: $e');
+      return HlsResult(
+        error: _tr(
+          'command.start_hls_unexpected',
+          params: {'error': e.toString()},
+          fallback: 'Unexpected error: $e',
+        ),
+      );
     }
   }
 
@@ -457,11 +630,7 @@ class _CommandWidgetState extends State<CommandWidget> {
         Positioned.fill(
           child: GestureDetector(
             behavior: HitTestBehavior.translucent,
-            onTap: () => showDialog(
-              context: context,
-              builder: (_) => AccidentDialog(
-                  camera: cam, accident: accident),
-            ),
+            onTap: () => _openAccidentDialog(accident),
             child: AccidentOverlay(
                 timestamp: accident['timestamp']?.toString()),
           ),
@@ -477,6 +646,10 @@ class _CommandWidgetState extends State<CommandWidget> {
   @override
   Widget build(BuildContext context) {
     final totalTiles = gridSize * gridSize;
+    final latestAccident = _latestAccidentEvent();
+    final latestCameraId = latestAccident?['cameraId']?.toString() ?? '';
+    final latestCamera =
+        latestCameraId.isNotEmpty ? _findCameraById(latestCameraId) : null;
 
     return SizedBox(
       width: widget.width,
@@ -635,6 +808,20 @@ class _CommandWidgetState extends State<CommandWidget> {
                   }
                 },
               ),
+
+              // ── Top incident strip ───────────────────────────────────────
+              if (latestAccident != null && _focusedCamera == null)
+                Positioned(
+                  top: 58,
+                  left: 0,
+                  right: 0,
+                  child: AccidentIncidentBanner(
+                    count: _latestAccidents.length,
+                    cameraName: latestCamera?.name ?? latestCameraId,
+                    timestamp: latestAccident['timestamp']?.toString(),
+                    onOpen: () => _openAccidentDialog(latestAccident),
+                  ),
+                ),
 
               // ── Edit mode banner ─────────────────────────────────────────
               if (_isEditMode) const EditModeBanner(),

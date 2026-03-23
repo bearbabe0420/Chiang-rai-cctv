@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:central_command/presentation/widgets/nav/nav_bar_main_widget.dart';
+import '/core/i18n/i18n.dart';
 import '/utils/app_text_styles.dart';
 import '/index.dart';
 import 'package:go_router/go_router.dart';
@@ -89,15 +90,15 @@ class _DashboardWidgetState extends State<DashboardWidget> {
               // ignore: prefer_const_constructors
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
+                children: [
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('AI Monitoring Dashboard',
+                        Text(context.tr('dashboard_ai.title', fallback: 'แดชบอร์ดเฝ้าระวัง AI'),
                             style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700, color: Color(0xFF1A1A1A), letterSpacing: -0.5)),
                         SizedBox(height: 4),
-                        Text('Real-time detection status from AI surveillance systems',
+                        Text(context.tr('dashboard_ai.subtitle', fallback: 'สถานะการตรวจจับแบบเรียลไทม์จากระบบกล้องอัจฉริยะ'),
                             style: TextStyle(fontSize: 14, color: Color(0xFF8A8A8E))),
                       ],
                     ),
@@ -128,10 +129,10 @@ class _DashboardWidgetState extends State<DashboardWidget> {
               // Stats Row
               LayoutBuilder(builder: (context, constraints) {
                 final statCards = [
-                  StatCard(label: 'Cameras Online', value: _systemStats.camerasOnline.toString(), icon: Icons.videocam, color: const Color(0xFF007AFF)),
-                  StatCard(label: 'Alerts Today', value: _systemStats.alertsToday.toString(), icon: Icons.notifications_outlined, color: const Color(0xFFFF9500)),
-                  StatCard(label: 'System Uptime', value: _systemStats.formattedUptime, icon: Icons.check_circle_outline, color: const Color(0xFF34C759)),
-                  StatCard(label: 'Storage Used', value: _systemStats.formattedStorage, icon: Icons.storage_outlined, color: const Color(0xFFFF3B30)),
+                  StatCard(label: context.tr('dashboard_ai.stats.cameras_online', fallback: 'กล้องออนไลน์'), value: _systemStats.camerasOnline.toString(), icon: Icons.videocam, color: const Color(0xFF007AFF)),
+                  StatCard(label: context.tr('dashboard_ai.stats.alerts_today', fallback: 'การแจ้งเตือนวันนี้'), value: _systemStats.alertsToday.toString(), icon: Icons.notifications_outlined, color: const Color(0xFFFF9500)),
+                  StatCard(label: context.tr('dashboard_ai.stats.system_uptime', fallback: 'เวลาทำงานระบบ'), value: _systemStats.formattedUptime, icon: Icons.check_circle_outline, color: const Color(0xFF34C759)),
+                  StatCard(label: context.tr('dashboard_ai.stats.storage_used', fallback: 'พื้นที่จัดเก็บที่ใช้'), value: _systemStats.formattedStorage, icon: Icons.storage_outlined, color: const Color(0xFFFF3B30)),
                 ];
                 return constraints.maxWidth > 600
                     ? Row(children: statCards.expand((c) => [Expanded(child: c), const SizedBox(width: 16)]).toList()..removeLast())
