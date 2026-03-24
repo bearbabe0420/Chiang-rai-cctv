@@ -87,47 +87,63 @@ public class SaveMotionFrameService {
      * After a successful upload, fires a MotionEvent to Kafka so downstream
      * consumers (accident-ai, license-plate, etc.) are notified automatically.
      */
-    private void uploadBufferedImage(BufferedImage image, String cameraId) {
-        byte[] bytes;
-        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-            ImageIO.write(image, "jpg", baos);
-            bytes = baos.toByteArray();
-        } catch (Exception e) {
-            log.error("Failed to encode image to JPEG for camera {}: {}", cameraId, e.getMessage());
-            return;
-        }
-
-        String path = "motion/" + cameraId + "/" + System.currentTimeMillis() + ".jpg";
-        String url;
-
-        // Firebase Upload
-        try {
-            Bucket bucket = StorageClient.getInstance().bucket();
-            Blob blob = bucket.create(path, bytes, "image/jpeg");
-
-            url = "https://storage.googleapis.com/"
-                    + bucket.getName() + "/"
-                    + blob.getName();
-
-            log.info("Motion frame uploaded for camera {}", cameraId);
-
-        } catch (Exception e) {
-            log.error("Firebase upload failed for camera {}: {}", cameraId, e.getMessage());
-            return;
-        }
-
-        // Kafka Send - separate try-catch so Firebase success isn't wasted
-        try {
-            motionEventProducer.send(MotionEvent.builder()
-                    .cameraId(cameraId)
-                    .timestamp(System.currentTimeMillis())
-                    .imageUrl(url)
-                    .build());
-            
-            log.info("Kafka event sent for camera {}", cameraId);
-
-        } catch (Exception e) {
-            log.error("Kafka send failed for camera {}: {}", cameraId, e.getMessage(), e);
-        }
+   private void uploadBufferedImage(BufferedImage image, String cameraId) {
+    byte[] bytes;
+    try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+        ImageIO.write(image, "jpg", baos);
+        bytes = baos.toByteArray();
+    } catch (Exception e) {
+        log.error("Failed to encode image: {}", e.getMessage());
+        return;
     }
+
+    String path = "motion/" + cameraId + "/" + System.currentTimeMillis() + ".jpg";
+    String url;
+
+    try {
+        Bucket bucket = StorageClient.getInstance().bucket();
+        
+        // ✅ ADD: generate a download token
+        String downloadToken = java.util.UUID.randomUUID().toString();
+        java.util.Map<String, String> metadata = new java.util.HashMap<>();
+        metadata.put("firebaseStorageDownloadTokens", downloadToken);
+
+        com.google.cloud.storage.BlobInfo blobInfo = com.google.cloud.storage.BlobInfo
+            .newBuilder(bucket.getName(), path)
+            .setContentType("image/jpeg")
+            .setMetadata(metadata)   // ✅ attach token as metadata
+            .build();
+
+        com.google.cloud.storage.Blob blob = bucket.getStorage().create(blobInfo, bytes);
+
+        // ✅ Build proper Firebase Storage URL with token
+        String encodedPath = java.net.URLEncoder
+            .encode(blob.getName(), java.nio.charset.StandardCharsets.UTF_8)
+            .replace("+", "%20");
+
+        url = "https://firebasestorage.googleapis.com/v0/b/"
+            + bucket.getName()
+            + "/o/"
+            + encodedPath
+            + "?alt=media&token="
+            + downloadToken;   // ✅ token attached!
+
+        log.info("Motion frame uploaded for camera {}", cameraId);
+
+    } catch (Exception e) {
+        log.error("Firebase upload failed for camera {}: {}", cameraId, e.getMessage());
+        return;
+    }
+
+    try {
+        motionEventProducer.send(MotionEvent.builder()
+                .cameraId(cameraId)
+                .timestamp(System.currentTimeMillis())
+                .imageUrl(url)   // ✅ now saves proper URL with token
+                .build());
+        log.info("Kafka event sent for camera {}", cameraId);
+    } catch (Exception e) {
+        log.error("Kafka send failed for camera {}: {}", cameraId, e.getMessage(), e);
+    }
+}
 }

@@ -3,6 +3,7 @@ import json
 import logging
 import os
 import datetime
+from urllib.parse import urlparse, unquote  # ← ADD THIS
 
 from aiokafka import AIOKafkaConsumer
 import firebase_admin
@@ -17,7 +18,6 @@ logger = logging.getLogger(__name__)
 OUTPUT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'output'))
 RETRY_INTERVAL_SECONDS = 5
 
-# Initialize Firebase Admin SDK with Storage bucket
 SERVICE_ACCOUNT_PATH = "/secrets/serviceAccount.json"
 if not firebase_admin._apps:
     cred = credentials.Certificate(SERVICE_ACCOUNT_PATH)
@@ -28,12 +28,37 @@ if not firebase_admin._apps:
 
 def parse_timestamp(raw) -> str:
     if isinstance(raw, int):
-        # Unix milliseconds from Kafka
         return datetime.datetime.fromtimestamp(raw / 1000).strftime("%Y%m%d_%H%M%S")
     elif isinstance(raw, str) and raw:
         return raw
     else:
         return datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+
+
+# ← ADD THIS HELPER FUNCTION
+def extract_blob_path(image_url: str) -> str | None:
+    """
+    Handles both URL formats:
+
+    OLD: https://storage.googleapis.com/bucket-name/motion/camId/123.jpg
+    NEW: https://firebasestorage.googleapis.com/v0/b/bucket/o/motion%2FcamId%2F123.jpg?alt=media&token=xxx
+    """
+    if "firebasestorage.googleapis.com" in image_url:
+        # New format — extract path between /o/ and ?
+        parsed = urlparse(image_url)
+        # parsed.path = /v0/b/bucket-name/o/motion%2FcamId%2F123.jpg
+        if "/o/" not in parsed.path:
+            logger.warning(f"Cannot extract blob path from: {image_url}")
+            return None
+        encoded_path = parsed.path.split("/o/", 1)[1]
+        return unquote(encoded_path)  # motion/camId/123.jpg ✅
+
+    elif "storage.googleapis.com" in image_url:
+        # Old format — split by /
+        parts = image_url.split("/")
+        return "/".join(parts[4:])  # motion/camId/123.jpg ✅
+
+    return None
 
 
 async def consume():
@@ -55,7 +80,7 @@ async def consume():
             logger.info("Kafka consumer started successfully.")
         except Exception as e:
             logger.error(f"Failed to connect to Kafka: {e}")
-            logger.info(f"Retrying in {RETRY_INTERVAL_SECONDS} seconds... (Ctrl+C to stop)")
+            logger.info(f"Retrying in {RETRY_INTERVAL_SECONDS} seconds...")
             await asyncio.sleep(RETRY_INTERVAL_SECONDS)
             continue
 
@@ -75,24 +100,20 @@ async def consume():
 
                 try:
                     temp_image_path = os.path.join(OUTPUT_DIR, f"temp_{timestamp}.jpg")
-                    # Extract blob path from Firebase Storage URL
-                    # URL format: https://storage.googleapis.com/bucket-name/motion/cameraId/timestamp.jpg
-                    if "storage.googleapis.com" in image_url:
-                        # Extract path after bucket name
-                        parts = image_url.split("/")
-                        # Find index after bucket name (skip https://storage.googleapis.com/bucket-name/)
-                        blob_path = "/".join(parts[4:])  # motion/cameraId/timestamp.jpg
-                        
-                        # Download from Firebase Storage with authentication (non-blocking)
-                        bucket = storage.bucket()
-                        blob = bucket.blob(blob_path)
-                        await asyncio.to_thread(blob.download_to_filename, temp_image_path)
-                        logger.debug(f"Downloaded from Firebase Storage: {blob_path}")
-                    else:
+
+                    # ← REPLACED: use helper function for both URL formats
+                    blob_path = extract_blob_path(image_url)
+
+                    if blob_path is None:
                         logger.warning(f"Unknown storage URL format: {image_url}")
                         continue
 
-                    # Run detection (also CPU-intensive, run in thread pool)
+                    # Admin SDK downloads with full auth — no token needed
+                    bucket = storage.bucket()
+                    blob = bucket.blob(blob_path)
+                    await asyncio.to_thread(blob.download_to_filename, temp_image_path)
+                    logger.debug(f"Downloaded from Firebase Storage: {blob_path}")
+
                     accident_found = await asyncio.to_thread(detect_accident, temp_image_path)
 
                     if accident_found:
@@ -105,7 +126,7 @@ async def consume():
                     logger.error(f"Error processing message from camera [{camera_id}]: {e}")
 
                 finally:
-                    if os.path.exists(temp_image_path):
+                    if temp_image_path and os.path.exists(temp_image_path):  # ← also fixed None check
                         try:
                             os.remove(temp_image_path)
                             logger.debug(f"Deleted temp file: {temp_image_path}")
