@@ -1,9 +1,8 @@
 import 'package:central_command/presentation/widgets/nav/nav_bar_main_widget.dart';
 import '/data/services/index.dart';
 import '/core/i18n/i18n.dart';
-import '/utils/flutter_flow_data_table.dart';
-import '/utils/flutter_flow_theme.dart';
-import '/utils/flutter_flow_util.dart';
+import '../../../utils/flutter_flow_export.dart';
+import '/utils/flutter_flow_export.dart';
 import 'package:easy_debounce/easy_debounce.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -117,6 +116,19 @@ class _CollectionWidgetState extends State<CollectionWidget> {
           _model.currentPage = page;
           _model.searchQuery = search;
           _model.isLoading = false;
+        });
+      }
+
+      final paginator =
+          _model.paginatedDataTableController.paginatorController;
+      if (paginator.isAttached) {
+        paginator.goToFirstPage();
+      } else {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          if (paginator.isAttached) {
+            paginator.goToFirstPage();
+          }
         });
       }
     } catch (e) {

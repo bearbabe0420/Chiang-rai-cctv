@@ -1,7 +1,6 @@
 import 'category_chip.dart';
 import '/core/i18n/i18n.dart';
-import '/utils/flutter_flow_theme.dart';
-import '/utils/flutter_flow_util.dart';
+import '/utils/flutter_flow_export.dart';
 import 'package:flutter/material.dart';
 
 // =============================================================================

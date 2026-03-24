@@ -12,12 +12,12 @@ import '/utils/flutter_flow/theme.dart';
 import '/utils/models/lat_lng.dart';
 import '/utils/models/place.dart';
 import '/utils/flutter_flow/util.dart';
-import 'serialization_util.dart';
+import '../serialization_util.dart';
 
 import '/index.dart';
 
 export 'package:go_router/go_router.dart';
-export 'serialization_util.dart';
+export '../serialization_util.dart';
 
 const kTransitionInfoKey = '__transition_info__';
 
