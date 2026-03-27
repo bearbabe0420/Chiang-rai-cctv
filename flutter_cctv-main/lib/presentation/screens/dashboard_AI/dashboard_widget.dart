@@ -6,11 +6,11 @@ import '/utils/app_text_styles.dart';
 import '/index.dart';
 import 'package:go_router/go_router.dart';
 import 'dashboard_model.dart';
-//import 'widgets/live_indicator.dart';
 import 'widgets/stat_card.dart';
 import 'widgets/license_plate_card.dart';
 import 'widgets/accident_detection_card.dart';
 import 'widgets/fighting_detection_card.dart';
+//import 'widgets/incident_trend_chart_card.dart';
 
 class DashboardWidget extends StatefulWidget {
   const DashboardWidget({super.key});
@@ -25,8 +25,10 @@ class DashboardWidget extends StatefulWidget {
 class _DashboardWidgetState extends State<DashboardWidget> {
   bool _isLive = true;
   late Timer _liveTimer;
+  final LicensePlateRepository _licensePlateRepository =
+      LicensePlateRepository();
 
-  final _licensePlateData = const LicensePlateData(totalDetected: 1247);
+  LicensePlateData _licensePlateData = const LicensePlateData(totalDetected: 0);
   final _accidentEvent = DetectionEvent(
     cameraId: 'Camera-A03',
     lastDetection: DateTime(2024, 1, 1, 9, 15, 42),
@@ -51,12 +53,33 @@ class _DashboardWidgetState extends State<DashboardWidget> {
   @override
   void initState() {
     super.initState();
+    _loadLatestLicensePlate();
     _liveTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+      _loadLatestLicensePlate();
       setState(() => _isLive = false);
       Future.delayed(const Duration(milliseconds: 500), () {
         if (mounted) setState(() => _isLive = true);
       });
     });
+  }
+
+  Future<void> _loadLatestLicensePlate() async {
+    try {
+      final latest = await _licensePlateRepository.getLatestLicensePlate();
+      if (!mounted || latest == null) return;
+
+      setState(() {
+        _licensePlateData = LicensePlateData(
+          totalDetected: _licensePlateData.totalDetected,
+          latestPlateNumber: latest.licensePlate?.fullPlate,
+          cameraId: latest.cameraName ?? latest.cameraId,
+          lastDetection: DateTime.tryParse(latest.timestamp ?? ''),
+          snapshotUrl: latest.imageUrl,
+        );
+      });
+    } catch (_) {
+      // Keep existing dashboard values if fetch fails.
+    }
   }
 
   @override
@@ -144,6 +167,8 @@ class _DashboardWidgetState extends State<DashboardWidget> {
                           ..removeLast(),
                       );
               }),
+              const SizedBox(height: 20),
+             // const IncidentTrendChartCard(),
             ],
           ),
         ),

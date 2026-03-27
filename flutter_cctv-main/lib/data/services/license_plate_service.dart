@@ -33,6 +33,23 @@ class LicensePlateService {
       alwaysAllowBody: false,
     );
   }
+  
+  Future<ApiCallResponse> getLatestLicensePlate() async {
+    return ApiManager.instance.makeApiCall(
+      callName: 'Get Latest License Plate',
+      apiUrl: '${ApiConfig.baseUrl}${ApiConfig.licensePlateSearchEndpoint}',
+      callType: ApiCallType.GET,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      returnBody: true,
+      encodeBodyUtf8: false,
+      decodeUtf8: false,
+      cache: false,
+      isStreamingApi: false,
+      alwaysAllowBody: false,
+    );
+  }
 
   // --- JSON Response Helpers ---
 

@@ -47,6 +47,24 @@ class AccidentDetectionCard extends StatelessWidget {
             value: event.todayCount.toString(),
             icon: Icons.bar_chart_outlined,
           ),
+          const InfoRowDivider(),
+          InfoRow(
+            label: context.tr(
+              'dashboard_ai.fields.top_camera_month',
+              fallback: 'กล้องเกิดอุบัติเหตุมากสุดเดือนนี้',
+            ),
+            value: '-',
+            icon: Icons.emoji_events_outlined,
+          ),
+          const InfoRowDivider(),
+          InfoRow(
+            label: context.tr(
+              'dashboard_ai.fields.top_camera_month_count',
+              fallback: 'จำนวนครั้งในเดือน',
+            ),
+            value: '-',
+            icon: Icons.insights_outlined,
+          ),
           const SizedBox(height: 20),
           SnapshotSection(imageUrl: event.snapshotUrl, placeholderColor: const Color(0xFF3A3A3C)),
         ],
