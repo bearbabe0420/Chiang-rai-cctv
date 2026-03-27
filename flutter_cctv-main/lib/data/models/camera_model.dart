@@ -8,6 +8,7 @@ class CameraModel {
   final String? address;
   final String? rtspUrl;
   final String? status;
+  final DateTime? lastSeen;
   final List<CategoryModel>? categories;
 
   CameraModel({
@@ -17,6 +18,7 @@ class CameraModel {
     this.address,
     this.rtspUrl,
     this.status,
+    this.lastSeen,
     this.categories,
   });
 
@@ -28,6 +30,7 @@ class CameraModel {
       address: json['address'] as String?,
       rtspUrl: json['rtspUrl'] as String?,
       status: json['status'] as String?,
+      lastSeen: _parseDateTime(json['lastSeen']),
       categories: (json['categories'] as List<dynamic>?)
           ?.map((e) => CategoryModel.fromJson(e as Map<String, dynamic>))
           .toList(),
@@ -42,6 +45,7 @@ class CameraModel {
       if (address != null) 'address': address,
       if (rtspUrl != null) 'rtspUrl': rtspUrl,
       if (status != null) 'status': status,
+      if (lastSeen != null) 'lastSeen': lastSeen!.toIso8601String(),
       if (categories != null)
         'categories': categories?.map((e) => e.toJson()).toList(),
     };
@@ -64,6 +68,7 @@ class CameraModel {
     String? address,
     String? rtspUrl,
     String? status,
+    DateTime? lastSeen,
     List<CategoryModel>? categories,
   }) {
     return CameraModel(
@@ -73,11 +78,29 @@ class CameraModel {
       address: address ?? this.address,
       rtspUrl: rtspUrl ?? this.rtspUrl,
       status: status ?? this.status,
+      lastSeen: lastSeen ?? this.lastSeen,
       categories: categories ?? this.categories,
     );
   }
 
+  static DateTime? _parseDateTime(dynamic value) {
+    if (value == null) return null;
+    if (value is DateTime) return value;
+    if (value is String) return DateTime.tryParse(value);
+    if (value is int) {
+      final isMilliseconds = value > 1000000000000;
+      final epoch = isMilliseconds ? value : value * 1000;
+      return DateTime.fromMillisecondsSinceEpoch(epoch);
+    }
+    if (value is double) {
+      final isMilliseconds = value > 1000000000000;
+      final epoch = isMilliseconds ? value.toInt() : (value * 1000).toInt();
+      return DateTime.fromMillisecondsSinceEpoch(epoch);
+    }
+    return null;
+  }
+
   @override
   String toString() =>
-      'CameraModel(id: $id, name: $name, status: $status)';
+      'CameraModel(id: $id, name: $name, status: $status, lastSeen: $lastSeen)';
 }

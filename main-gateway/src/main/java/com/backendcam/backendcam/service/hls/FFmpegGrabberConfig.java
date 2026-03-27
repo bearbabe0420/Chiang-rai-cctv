@@ -94,6 +94,76 @@ public class FFmpegGrabberConfig {
     }
 
     /**
+     * Create and start an RTSP grabber for HD streaming with automatic retries.
+     * Uses HD-optimized configuration for 720p/1080p streams.
+     *
+     * @param rtspUrl    RTSP source URL
+     * @param streamName for logging
+     * @param context    stream context (checked for shouldStop, grabber reference
+     *                   stored here)
+     * @return a started FFmpegFrameGrabber with valid width/height, configured for
+     *         HD
+     * @throws Exception if all retries exhausted or interrupted
+     */
+    public FFmpegFrameGrabber startGrabberWithRetryHD(String rtspUrl, String streamName,
+            StreamContext context) throws Exception {
+        Exception lastException = null;
+
+        for (int attempt = 1; attempt <= MAX_INIT_RETRIES; attempt++) {
+            if (context.shouldStop || Thread.currentThread().isInterrupted()) {
+                throw new InterruptedException("Stream stopped during grabber init");
+            }
+
+            FFmpegFrameGrabber grabber = null;
+            try {
+                grabber = new FFmpegFrameGrabber(rtspUrl);
+                context.grabber = grabber;
+                configureGrabberForHD(grabber); // HD configuration
+
+                // Dimension detection with retries (HEVC cameras may need probing)
+                int width = grabber.getImageWidth();
+                int height = grabber.getImageHeight();
+
+                for (int dr = 0; dr < MAX_DIMENSION_RETRIES && (width <= 0 || height <= 0); dr++) {
+                    logger.warn("Stream {} - Invalid dimensions {}x{}, probing {}/{}...",
+                            streamName, width, height, dr + 1, MAX_DIMENSION_RETRIES);
+                    for (int i = 0; i < 30; i++) {
+                        Frame probeFrame = grabber.grabImage();
+                        if (probeFrame != null)
+                            probeFrame.close();
+                        Thread.sleep(100);
+                    }
+                    width = grabber.getImageWidth();
+                    height = grabber.getImageHeight();
+                    if (width <= 0 || height <= 0)
+                        Thread.sleep(DIMENSION_RETRY_DELAY_MS);
+                }
+
+                if (width <= 0 || height <= 0) {
+                    throw new RuntimeException("Invalid resolution " + width + "x" + height);
+                }
+
+                logger.info("Stream {} - HD Grabber ready ({}x{}) on attempt {}", streamName, width, height, attempt);
+                return grabber;
+
+            } catch (InterruptedException ie) {
+                safeClose(grabber);
+                context.grabber = null;
+                throw ie;
+            } catch (Exception e) {
+                lastException = e;
+                logger.warn("Stream {} - HD Grabber init attempt {}/{} failed: {}",
+                        streamName, attempt, MAX_INIT_RETRIES, e.getMessage());
+                safeClose(grabber);
+                context.grabber = null;
+                if (attempt < MAX_INIT_RETRIES)
+                    Thread.sleep(INIT_RETRY_DELAY_MS);
+            }
+        }
+        throw new RuntimeException("HD Grabber init failed after " + MAX_INIT_RETRIES + " attempts", lastException);
+    }
+
+    /**
      * Safely stop and release a grabber, ignoring errors.
      */
     public void safeClose(FFmpegFrameGrabber grabber) {
@@ -127,7 +197,7 @@ public class FFmpegGrabberConfig {
 
         // Probe settings - must be large enough to detect HEVC/H.265 resolution
         // Too small (e.g. 32) causes "Picture size 0x0" errors on HEVC cameras
-        grabber.setOption("analyzeduration", "1000000"); // 1 second to analyze stream
+        grabber.setOption("analyzeduration", "5000000"); // 5 second to analyze stream
         grabber.setOption("probesize", "1000000"); // 1MB to detect codec params
         grabber.setOption("max_delay", "500000"); // 500ms max delay
         grabber.setOption("reorder_queue_size", "0");
@@ -189,6 +259,63 @@ public class FFmpegGrabberConfig {
 
         grabber.setOption("allowed_media_types", "video");
         grabber.setOption("use_wallclock_as_timestamps", "1");
+
+        grabber.start();
+    }
+
+    /**
+     * Configure grabber for HD LIVE STREAMING (high quality, 720p/1080p)
+     * Use this for high-definition real-time streaming where quality is important.
+     * Optimized for HD resolutions (1280x720, 1920x1080).
+     * 
+     * @param grabber The FFmpegFrameGrabber to configure
+     * @throws Exception if configuration fails
+     */
+    public void configureGrabberForHD(FFmpegFrameGrabber grabber) throws Exception {
+        avutil.av_log_set_level(avutil.AV_LOG_FATAL);
+
+        grabber.setFormat("rtsp");
+        grabber.setImageMode(ImageMode.COLOR);
+
+        // ─── FIX 3: Hardware H.265 decode via NVDEC/CUVID ────────────────
+        // This offloads H.265 decode from CPU to the GPU's NVDEC unit
+        //grabber.setOption("hwaccel", "cuda");
+        //grabber.setOption("c:v", "hevc_cuvid"); // use NVDEC for H.265
+        //grabber.setOption("hwaccel_output_format", "nv12"); // keep decoded frames in GPU-friendly format
+
+        // If your camera sends H.264, swap hevc_cuvid → h264_cuvid
+        // For unknown codecs, set hwaccel=auto instead:
+        // grabber.setOption("hwaccel", "auto");
+
+        // Probe — reduced for HD, NVDEC is faster to detect codec params
+        grabber.setOption("analyzeduration", "5000000"); // 5 sec
+        grabber.setOption("probesize", "5000000"); // 5 MB — reduced from 10 MB
+        grabber.setOption("max_delay", "500000");
+        grabber.setOption("reorder_queue_size", "0");
+
+        // ─── FIX 4: Better fflags for 4K/HEVC ────────────────────────────
+        // Remove +nobuffer — it breaks HEVC GOP alignment on high-bitrate cameras
+        // This was causing incomplete frames at 4K and the null frame bursts you see
+        grabber.setOption("fflags", "+discardcorrupt+igndts+genpts");
+        grabber.setOption("flags", "low_delay");
+
+        grabber.setOption("rtsp_transport", "tcp");
+        grabber.setOption("rtsp_flags", "prefer_tcp");
+        grabber.setOption("timeout", "0"); // no idle timeout
+        grabber.setOption("tcp_nodelay", "1"); // disable Nagle — send keepalives immediately
+        grabber.setOption("recv_buffer_size", "0"); // let OS manage buffer size
+
+        // Longer socket timeout for 4K (more data per packet burst)
+        grabber.setOption("stimeout", "15000000");
+        grabber.setOption("rw_timeout", "15000000");
+
+        grabber.setOption("allowed_media_types", "video");
+        grabber.setOption("use_wallclock_as_timestamps", "1");
+
+        // Larger network buffer for 4K bitrates (20+ Mbps from camera)
+        grabber.setOption("buffer_size", "8388608"); // 8 MB — reduces packet loss on burst
+
+        grabber.setOption("err_detect", "ignore_err");
 
         grabber.start();
     }

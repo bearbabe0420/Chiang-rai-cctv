@@ -1,18 +1,20 @@
 package com.backendcam.backendcam.repository;
 
-import com.backendcam.backendcam.model.entity.LicensePlate;
-import com.backendcam.backendcam.service.firestore.FirebaseAdminBootstrap;
-import com.google.api.core.ApiFuture;
-import com.google.cloud.firestore.*;
-import com.google.firebase.cloud.FirestoreClient;
-
-import lombok.RequiredArgsConstructor;
-
-import org.springframework.stereotype.Repository;
-
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Repository;
+
+import com.backendcam.backendcam.model.entity.LicensePlate;
+import com.backendcam.backendcam.service.firestore.FirebaseAdminBootstrap;
+import com.google.api.core.ApiFuture;
+import com.google.cloud.firestore.DocumentReference;
+import com.google.cloud.firestore.Firestore;
+import com.google.cloud.firestore.Query;
+import com.google.firebase.cloud.FirestoreClient;
+
+import lombok.RequiredArgsConstructor;
 
 @Repository
 @RequiredArgsConstructor
@@ -50,7 +52,7 @@ public class LicensePlateRepository {
 
     public List<LicensePlate> findByCameraId(String cameraId) throws ExecutionException, InterruptedException {
         return queryList(db -> db.collection(COLLECTION)
-                .whereEqualTo("cameraId", cameraId));
+                .whereEqualTo("camera", cameraId));
     }
 
     public List<LicensePlate> findByText(String text) throws ExecutionException, InterruptedException {
@@ -77,7 +79,7 @@ public class LicensePlateRepository {
     public List<LicensePlate> findByCameraIdAndTimestampRange(String cameraId, String start, String end)
             throws ExecutionException, InterruptedException {
         return queryList(db -> db.collection(COLLECTION)
-                .whereEqualTo("cameraId", cameraId)
+                .whereEqualTo("camera", cameraId)
                 .whereGreaterThanOrEqualTo("timestamp", start)
                 .whereLessThanOrEqualTo("timestamp", end));
     }

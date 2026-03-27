@@ -1,7 +1,7 @@
-import '/presentation/widgets/map/views/map_view_component_widget.dart';
-import '/presentation/widgets/map/views/marker_info_popup_widget.dart';
-import '/presentation/widgets/nav/views/nav_bar_main_widget.dart';
-import '/presentation/widgets/camera/views/preview_overlay_widget.dart';
+import 'widgets/views/map_view_component_widget.dart';
+import 'widgets/views/marker_info_popup_widget.dart';
+import '../../widgets/nav/nav_bar_main_widget.dart';
+import '/presentation/screens/map_view/widgets/views/preview_overlay_widget.dart';
 import '/utils/flutter_flow/theme.dart';
 import '/utils/flutter_flow/util.dart';
 import '/utils/flutter_flow/widgets.dart';
@@ -12,7 +12,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-
 class MapViewModel extends FlutterFlowModel<MapViewWidget> {
   ///  Local state fields for this page.
 

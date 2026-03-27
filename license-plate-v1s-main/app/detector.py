@@ -8,6 +8,7 @@ from typing import Optional, Dict, List
 import time
 import logging
 from PIL import Image, ImageDraw, ImageFont
+from firebase_admin import storage
 
 # Import Gemini OCR
 try:
@@ -188,6 +189,7 @@ class LicensePlateDetector:
         use_ocr: Optional[bool] = None,
         kafka_timestamp: Optional[str] = None,
         image_url: Optional[str] = None,
+        camera_name: Optional[str] = None,
         camera_id: Optional[str] = None
     ) -> Dict:
         """
@@ -200,6 +202,7 @@ class LicensePlateDetector:
             use_ocr: ใช้ OCR หรือไม่ (ถ้าไม่ได้ระบุ จะใช้ค่าจากการตั้งค่าเริ่มต้น)
             kafka_timestamp: timestamp จาก Kafka message
             image_url: URL ของภาพต้นฉบับจาก Kafka
+            camera_name: ชื่อของกล้องที่ส่งภาพมา
             camera_id: ID ของกล้องที่ส่งภาพมา
         
         Returns:
@@ -268,6 +271,7 @@ class LicensePlateDetector:
             "timestamp": timestamp_iso,
             "kafka_timestamp": kafka_timestamp,
             "imageUrl": image_url,
+            "cameraName": camera_name,
             "cameraId": camera_id,
             "detections": detections,
             "total_plates": len(detections),
@@ -306,8 +310,8 @@ class LicensePlateDetector:
             repo = FirestoreRepository()
             docs = self._map_each_plate_to_firestore_docs(output_data)
             for doc in docs:
-                repo.save_license_plate(doc)
-            logger.info(f"   🚀 Sent {len(docs)} license plate(s) to Firestore.")
+                 repo.save_license_plate(doc)
+     
         except Exception as e:
             logger.error(f"   ❌ Failed to send result to Firestore: {e}")
 
@@ -545,7 +549,7 @@ class LicensePlateDetector:
         
         # แปลงกลับเป็น OpenCV (RGB -> BGR)
         return cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
-    
+
     def batch_detect(
         self,
         image_paths: List[str],
@@ -610,18 +614,35 @@ class LicensePlateDetector:
         docs = []
         timestamp = output_data.get("timestamp")
         imageUrl = output_data.get("imageUrl")
+        cameraName = output_data.get("cameraName")
         cameraId = output_data.get("cameraId")
         for det in output_data.get("detections", []):
             ocr = det.get("ocr", {})
+            full_plate = (ocr.get("full_plate", "") or "").strip()
+            text = (ocr.get("text", "") or "").strip()
+            number = (ocr.get("license_plate_number", "") or "").strip()
+            province = (ocr.get("province", "") or "").strip()
+
+            def _is_meaningful(value: str) -> bool:
+                if not value:
+                    return False
+                return value.upper() != "UNREADABLE"
+
+            # ถ้าทุก field ว่างหรือเป็น UNREADABLE ให้ข้าม ไม่บันทึกเข้า Firestore
+            if not any(_is_meaningful(v) for v in [full_plate, text, number, province]):
+                logger.info("   🔎 Skipping Firestore doc for detection with empty/unreadable plate.")
+                continue
+
             doc = {
                 "timestamp": timestamp,
                 "imageUrl": imageUrl,
+                "cameraName": cameraName,
                 "cameraId": cameraId,
                 "licensePlate": {
-                    "fullPlate": ocr.get("full_plate", ""),
-                    "text": ocr.get("text", ""),
-                    "number": ocr.get("license_plate_number", ""),
-                    "province": ocr.get("province", "")
+                    "fullPlate": full_plate,
+                    "text": text,
+                    "number": number,
+                    "province": province
                 }
             }
             docs.append(doc)

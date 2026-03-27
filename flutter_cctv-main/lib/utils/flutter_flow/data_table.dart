@@ -61,7 +61,7 @@ class FlutterFlowDataTableController<T> extends DataTableSource {
   }) {
     this.data = data?.toList() ?? this.data;
     _numRows = numRows ?? _numRows;
-    if (!paginated) {
+    if (!paginated && paginatorController.isAttached) {
       paginatorController.setRowsPerPage(_numRows ?? this.data.length);
     }
     if (notify) {

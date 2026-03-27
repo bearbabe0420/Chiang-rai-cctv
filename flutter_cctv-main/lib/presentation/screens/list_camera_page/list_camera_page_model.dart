@@ -1,5 +1,6 @@
-import '/presentation/widgets/camera/views/addnewcamera_widget.dart';
-import '/presentation/widgets/nav/views/nav_bar_main_widget.dart';
+import 'package:central_command/presentation/widgets/nav/nav_bar_main_widget.dart';
+import '/presentation/screens/list_camera_page/widgets/views/addnewcamera_widget.dart';
+///import 'package:central_command/presentation/widgets /nav_bar_main_widget.dart';
 import '/utils/flutter_flow/theme.dart';
 import '/utils/flutter_flow/util.dart';
 import 'dart:ui';

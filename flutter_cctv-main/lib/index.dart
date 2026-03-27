@@ -10,8 +10,11 @@ export '/presentation/screens/collection/collection_widget.dart'
     show CollectionWidget;
 export '/presentation/screens/searchlicenseplate/searchlicenseplate_widget.dart'
     show ListPlatePageWidget;
+export '/presentation/screens/dashboard_AI/dashboard_widget.dart'
+    show DashboardWidget;
 
 // Export data layer
 export '/data/services/index.dart';
 export '/data/models/index.dart';
 export '/data/repositories/index.dart';
+

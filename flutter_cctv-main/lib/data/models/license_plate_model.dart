@@ -1,12 +1,14 @@
 /// License Plate Data Model - โมเดลข้อมูลทะเบียนรถ
 class LicensePlateModel {
   final String? timestamp;
+  final String? cameraName;
   final String? cameraId;
   final String? imageUrl;
   final LicensePlateDetail? licensePlate;
 
   LicensePlateModel({
     this.timestamp,
+    this.cameraName,
     this.cameraId,
     this.imageUrl,
     this.licensePlate,
@@ -15,7 +17,8 @@ class LicensePlateModel {
   factory LicensePlateModel.fromJson(Map<String, dynamic> json) {
     return LicensePlateModel(
       timestamp: json['timestamp'] as String?,
-      cameraId: json['cameraId'] as String?,
+      cameraName: (json['camera'] as Map<String, dynamic>?)?['cameraName'] as String?,
+      cameraId: (json['camera'] as Map<String, dynamic>?)?['cameraId'] as String?,
       imageUrl: json['imageUrl'] as String?,
       licensePlate: json['licensePlate'] != null
           ? LicensePlateDetail.fromJson(
@@ -27,15 +30,21 @@ class LicensePlateModel {
   Map<String, dynamic> toJson() {
     return {
       if (timestamp != null) 'timestamp': timestamp,
-      if (cameraId != null) 'cameraId': cameraId,
+      //if (cameraName != null) 'cameraName': cameraName,
+      //if (cameraId != null) 'cameraId': cameraId,
       if (imageUrl != null) 'imageUrl': imageUrl,
       if (licensePlate != null) 'licensePlate': licensePlate?.toJson(),
+      if (cameraName != null || cameraId != null)
+      'camera': {
+        'cameraName': cameraName,
+        'cameraId': cameraId,
+      },
     };
   }
 
   @override
   String toString() =>
-      'LicensePlateModel(cameraId: $cameraId, plate: ${licensePlate?.fullPlate})';
+      'LicensePlateModel(cameraName: $cameraName, cameraId: $cameraId, plate: ${licensePlate?.fullPlate})';
 }
 
 /// รายละเอียดของทะเบียนรถ
