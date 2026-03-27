@@ -16,6 +16,10 @@ class UsernameField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const fillColor = Color(0xFFFDFEFF);
+    const borderColor = Color(0xFFC8D5E3);
+    const focusColor = Color(0xFF1F4469);
+
     return Padding(
       padding: const EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 16.0),
       child: SizedBox(
@@ -30,35 +34,47 @@ class UsernameField extends StatelessWidget {
           keyboardType: TextInputType.emailAddress,
           decoration: InputDecoration(
             labelText: context.tr('login.username', fallback: 'ชื่อผู้ใช้'),
+            floatingLabelStyle: FlutterFlowTheme.of(context).labelLarge.override(
+                  font: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600),
+                  color: focusColor,
+                  fontSize: AppTextStyles.navBrand,
+                  letterSpacing: 0.0,
+                  fontWeight: FontWeight.w600,
+                ),
             labelStyle: FlutterFlowTheme.of(context).labelLarge.override(
                   font: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w500),
-                  color: const Color(0xFF57636C),
+                  color: const Color(0xFF4E6378),
                   fontSize: AppTextStyles.navBrand,
                   letterSpacing: 0.0,
                   fontWeight: FontWeight.w500,
                 ),
+            prefixIcon: const Icon(
+              Icons.person_outline_rounded,
+              color: Color(0xFF4E6378),
+              size: 22.0,
+            ),
             enabledBorder: OutlineInputBorder(
-              borderSide: const BorderSide(color: Color(0xFFF1F4F8), width: 2.0),
-              borderRadius: BorderRadius.circular(12.0),
+              borderSide: const BorderSide(color: borderColor, width: 1.3),
+              borderRadius: BorderRadius.circular(14.0),
             ),
             focusedBorder: OutlineInputBorder(
-              borderSide: const BorderSide(color: Color(0xFF4B39EF), width: 2.0),
-              borderRadius: BorderRadius.circular(12.0),
+              borderSide: const BorderSide(color: focusColor, width: 1.8),
+              borderRadius: BorderRadius.circular(14.0),
             ),
             errorBorder: OutlineInputBorder(
               borderSide: const BorderSide(color: Color(0xFFE0E3E7), width: 2.0),
-              borderRadius: BorderRadius.circular(12.0),
+              borderRadius: BorderRadius.circular(14.0),
             ),
             focusedErrorBorder: OutlineInputBorder(
               borderSide: const BorderSide(color: Color(0xFFE0E3E7), width: 2.0),
-              borderRadius: BorderRadius.circular(12.0),
+              borderRadius: BorderRadius.circular(14.0),
             ),
             filled: true,
-            fillColor: const Color(0xFFF1F4F8),
+            fillColor: fillColor,
           ),
           style: FlutterFlowTheme.of(context).bodyLarge.override(
                 font: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w500),
-                color: const Color(0xFF101213),
+                color: const Color(0xFF1D3249),
                 fontSize: AppTextStyles.tableHeader,
                 letterSpacing: 0.0,
                 fontWeight: FontWeight.w500,
@@ -85,6 +101,10 @@ class PasswordField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const fillColor = Color(0xFFFDFEFF);
+    const borderColor = Color(0xFFC8D5E3);
+    const focusColor = Color(0xFF1F4469);
+
     return Padding(
       padding: const EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 16.0),
       child: SizedBox(
@@ -108,31 +128,43 @@ class PasswordField extends StatelessWidget {
           },
           decoration: InputDecoration(
             labelText: context.tr('login.password', fallback: 'รหัสผ่าน'),
+            floatingLabelStyle: FlutterFlowTheme.of(context).labelLarge.override(
+                  font: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600),
+                  color: focusColor,
+                  fontSize: AppTextStyles.tableHeader,
+                  letterSpacing: 0.0,
+                  fontWeight: FontWeight.w600,
+                ),
             labelStyle: FlutterFlowTheme.of(context).labelLarge.override(
                   font: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w500),
-                  color: const Color(0xFF57636C),
+                  color: const Color(0xFF4E6378),
                   fontSize: AppTextStyles.tableHeader,
                   letterSpacing: 0.0,
                   fontWeight: FontWeight.w500,
                 ),
+            prefixIcon: const Icon(
+              Icons.lock_outline_rounded,
+              color: Color(0xFF4E6378),
+              size: 22.0,
+            ),
             enabledBorder: OutlineInputBorder(
-              borderSide: const BorderSide(color: Color(0xFFF1F4F8), width: 2.0),
-              borderRadius: BorderRadius.circular(12.0),
+              borderSide: const BorderSide(color: borderColor, width: 1.3),
+              borderRadius: BorderRadius.circular(14.0),
             ),
             focusedBorder: OutlineInputBorder(
-              borderSide: const BorderSide(color: Color(0xFF4B39EF), width: 2.0),
-              borderRadius: BorderRadius.circular(12.0),
+              borderSide: const BorderSide(color: focusColor, width: 1.8),
+              borderRadius: BorderRadius.circular(14.0),
             ),
             errorBorder: OutlineInputBorder(
               borderSide: const BorderSide(color: Color(0xFFE0E3E7), width: 2.0),
-              borderRadius: BorderRadius.circular(12.0),
+              borderRadius: BorderRadius.circular(14.0),
             ),
             focusedErrorBorder: OutlineInputBorder(
               borderSide: const BorderSide(color: Color(0xFFE0E3E7), width: 2.0),
-              borderRadius: BorderRadius.circular(12.0),
+              borderRadius: BorderRadius.circular(14.0),
             ),
             filled: true,
-            fillColor: const Color(0xFFF1F4F8),
+            fillColor: fillColor,
             suffixIcon: InkWell(
               onTap: onToggleVisibility,
               focusNode: FocusNode(skipTraversal: true),
@@ -140,14 +172,14 @@ class PasswordField extends StatelessWidget {
                 model.passwordVisibility
                     ? Icons.visibility_outlined
                     : Icons.visibility_off_outlined,
-                color: const Color(0xFF57636C),
+                color: const Color(0xFF3F5872),
                 size: 24.0,
               ),
             ),
           ),
           style: FlutterFlowTheme.of(context).bodyLarge.override(
                 font: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w500),
-                color: const Color(0xFF101213),
+                color: const Color(0xFF1D3249),
                 fontSize: AppTextStyles.tableHeader,
                 letterSpacing: 0.0,
                 fontWeight: FontWeight.w500,
