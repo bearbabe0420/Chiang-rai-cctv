@@ -13,7 +13,7 @@ class LicensePlateRepository {
       String licensePlate) async {
     try {
       final response =
-          await _service.searchLicensePlates(licensePlate: licensePlate);
+          await _service.searchLicensePlates(fullPlate: licensePlate);
       if (response.succeeded && response.jsonBody != null) {
         final data = response.jsonBody;
         if (data is List) {

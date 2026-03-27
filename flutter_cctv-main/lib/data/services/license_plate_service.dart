@@ -13,7 +13,9 @@ class LicensePlateService {
 
   /// ค้นหาทะเบียนรถ
   Future<ApiCallResponse> searchLicensePlates({
-    String? licensePlate,
+    String? fullPlate,
+    int? page,
+    int? limit,
   }) async {
     return ApiManager.instance.makeApiCall(
       callName: 'Search License Plates',
@@ -23,7 +25,9 @@ class LicensePlateService {
         'Content-Type': 'application/json',
       },
       params: {
-        if (licensePlate != null) 'licensePlate': licensePlate,
+        if (fullPlate != null && fullPlate.isNotEmpty) 'fullPlate': fullPlate,
+        if (page != null) 'page': '$page',
+        if (limit != null) 'limit': '$limit',
       },
       returnBody: true,
       encodeBodyUtf8: false,
