@@ -63,25 +63,47 @@ class _ListPlatePageWidgetState extends State<ListPlatePageWidget> {
 
     try {
       final response = await LicensePlateService().searchLicensePlates(
-        licensePlate: search.isNotEmpty ? search : null,
+        fullPlate: search.isNotEmpty ? search : null,
+        page: page,
+        limit: ListPlatePageModel.pageSize,
       );
 
       if (response.succeeded) {
         final raw = _parsePlateList(response.jsonBody);
-        _model.listOfPlates = _sortPlates(raw, search);
-        _model.totalItems = _model.listOfPlates.length;
-        _model.totalPages =
-            ((_model.totalItems / ListPlatePageModel.pageSize).ceil())
-                .clamp(1, 9999)
-                .toInt();
+        final sorted = _sortPlates(raw, search);
+        final hasServerPagination = _hasServerPagination(response.jsonBody);
+
+        _model.isServerPaginated = hasServerPagination;
+        _model.listOfPlates = sorted;
+
+        if (hasServerPagination) {
+          _model.totalItems =
+              _readIntFromMeta(response.jsonBody, 'totalItems') ?? sorted.length;
+          _model.totalPages =
+              (_readIntFromMeta(response.jsonBody, 'totalPages') ?? 1)
+                  .clamp(1, 9999)
+                  .toInt();
+          _model.currentPage =
+              (_readIntFromMeta(response.jsonBody, 'currentPage') ?? page)
+                  .clamp(1, _model.totalPages)
+                  .toInt();
+        } else {
+          _model.totalItems = _model.listOfPlates.length;
+          _model.totalPages =
+              ((_model.totalItems / ListPlatePageModel.pageSize).ceil())
+                  .clamp(1, 9999)
+                  .toInt();
+          _model.currentPage = page.clamp(1, _model.totalPages).toInt();
+        }
       } else {
         debugPrint('API error: ${response.statusCode}');
         _model.listOfPlates = [];
+        _model.isServerPaginated = false;
         _model.totalItems = 0;
         _model.totalPages = 1;
+        _model.currentPage = 1;
       }
 
-      _model.currentPage = page.clamp(1, _model.totalPages).toInt();
       _model.searchQuery = search;
     } catch (e) {
       debugPrint('Error fetching plates: $e');
@@ -102,6 +124,21 @@ class _ListPlatePageWidgetState extends State<ListPlatePageWidget> {
         .map((item) =>
             item is Map<String, dynamic> ? item : <String, dynamic>{})
         .toList();
+  }
+
+  bool _hasServerPagination(dynamic body) {
+    if (body is! Map<String, dynamic>) return false;
+    final data = body['data'];
+    final meta = body['meta'];
+    return data is List && meta is Map;
+  }
+
+  int? _readIntFromMeta(dynamic body, String key) {
+    final value = getJsonField(body, r'$.meta.' + key);
+    if (value is int) return value;
+    if (value is double) return value.toInt();
+    if (value is String) return int.tryParse(value);
+    return null;
   }
 
   List<Map<String, dynamic>> _sortPlates(
@@ -305,13 +342,18 @@ class _ListPlatePageWidgetState extends State<ListPlatePageWidget> {
   }
 
   List<TableRow> _buildTableRows(BuildContext context) {
-    final start = (_model.currentPage - 1) * ListPlatePageModel.pageSize;
-    final end = (start + ListPlatePageModel.pageSize)
-        .clamp(0, _model.listOfPlates.length)
-        .toInt();
-    final items = start >= _model.listOfPlates.length
-        ? <Map<String, dynamic>>[]
-        : _model.listOfPlates.sublist(start, end);
+    final items = _model.isServerPaginated
+        ? _model.listOfPlates
+        : () {
+            final start = (_model.currentPage - 1) * ListPlatePageModel.pageSize;
+            final end = (start + ListPlatePageModel.pageSize)
+                .clamp(0, _model.listOfPlates.length)
+                .toInt();
+            if (start >= _model.listOfPlates.length) {
+              return <Map<String, dynamic>>[];
+            }
+            return _model.listOfPlates.sublist(start, end);
+          }();
 
     return items.asMap().entries.map((entry) {
       final i = entry.key;

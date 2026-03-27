@@ -12,6 +12,7 @@ class ListPlatePageModel extends FlutterFlowModel<ListPlatePageWidget> {
   int totalPages = 1;
   int totalItems = 0;
   static const int pageSize = 10;
+  bool isServerPaginated = false;
 
   // State
   bool isLoading = false;
