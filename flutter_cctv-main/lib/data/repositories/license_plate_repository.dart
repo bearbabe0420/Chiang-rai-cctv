@@ -29,4 +29,27 @@ class LicensePlateRepository {
       return [];
     }
   }
+
+  Future<LicensePlateModel?> getLatestLicensePlate() async {
+    try {
+      final response = await _service.getLatestLicensePlate();
+      if (response.succeeded && response.jsonBody is List) {
+        final data = response.jsonBody as List;
+        if (data.isEmpty) return null;
+
+        final latestJson = data.first;
+        if (latestJson is Map<String, dynamic>) {
+          return LicensePlateModel.fromJson(latestJson);
+        }
+
+        if (latestJson is Map) {
+          return LicensePlateModel.fromJson(Map<String, dynamic>.from(latestJson));
+        }
+      }
+      return null;
+    } catch (e) {
+      print('Error getting latest license plate: $e');
+      return null;
+    }
+  }
 }
