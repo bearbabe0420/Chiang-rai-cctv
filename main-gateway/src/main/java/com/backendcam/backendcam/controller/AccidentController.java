@@ -5,6 +5,7 @@ import com.backendcam.backendcam.model.dto.PageResponse;
 import com.backendcam.backendcam.model.dto.accident.AccidentResponseDto;
 import com.backendcam.backendcam.model.dto.accident.CreateAccidentDto;
 import com.backendcam.backendcam.service.accident.AccidentService;
+import com.backendcam.backendcam.model.dto.accident.AccidentDashboardDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -50,5 +51,16 @@ public class AccidentController {
     public ResponseEntity<MessageResponse> deleteAccident(@PathVariable String id) {
         accidentService.deleteAccident(id);
         return ResponseEntity.ok(new MessageResponse("Accident ID: " + id + " deleted successfully"));
+    }
+
+     @GetMapping("/dashboard")
+    public ResponseEntity<AccidentDashboardDTO> getAccidentDashboard() {
+        AccidentDashboardDTO response = accidentService.getAccidentDashboard();
+
+        if (response == null || response.getLatestAccident() == null) {
+            return ResponseEntity.noContent().build(); // 204 — no data yet
+        }
+
+        return ResponseEntity.ok(response);
     }
 }

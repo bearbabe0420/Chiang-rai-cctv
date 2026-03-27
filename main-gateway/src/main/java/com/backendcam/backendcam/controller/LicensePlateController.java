@@ -8,8 +8,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+
 import com.backendcam.backendcam.model.dto.PageResponse;
 import com.backendcam.backendcam.model.dto.licenseplate.LicensePlateDTO;
+import com.backendcam.backendcam.model.dto.licenseplate.LicensePlateDashbordDTO;
 import com.backendcam.backendcam.service.licenseplate.LicensePlateService;
 
 import lombok.RequiredArgsConstructor;
@@ -51,5 +53,13 @@ public class LicensePlateController {
                 fullPlate, cameraId, text, number, province, start, end, page, limit);
 
         return ResponseEntity.ok(results);
+    }
+
+    @GetMapping("/stats")
+    public ResponseEntity<LicensePlateDashbordDTO> getStats() {
+
+        LicensePlateDashbordDTO stats = licensePlateService.getLatest();
+        return ResponseEntity.ok(stats);
+
     }
 }

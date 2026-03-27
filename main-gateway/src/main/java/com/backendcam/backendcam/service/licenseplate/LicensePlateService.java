@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 
 import com.backendcam.backendcam.model.dto.PageResponse;
 import com.backendcam.backendcam.model.dto.licenseplate.LicensePlateDTO;
+import com.backendcam.backendcam.model.dto.licenseplate.LicensePlateDashbordDTO;
 import com.backendcam.backendcam.model.entity.Camera;
 import com.backendcam.backendcam.model.entity.LicensePlate;
 import com.backendcam.backendcam.repository.CameraRepository;
@@ -211,4 +212,79 @@ public class LicensePlateService {
     private int fuzzyScore(String s1, String s2) {
         return Math.max(FuzzySearch.ratio(s1, s2), FuzzySearch.partialRatio(s1, s2));
     }
+
+
+public LicensePlateDashbordDTO getLatest() {
+    try {
+        List<LicensePlate> all = licensePlateRepository.getAll();
+
+        if (all.isEmpty()) {
+            return null;
+        }
+
+        // Timestamp is com.google.cloud.Timestamp — convert to Instant for date comparison
+        java.time.LocalDate today = java.time.LocalDate.now(java.time.ZoneOffset.UTC);
+
+        long totalLicenseToday = all.stream()
+                .filter(p -> p.getTimestamp() != null)
+                .filter(p -> {
+                    // Convert Firestore Timestamp → Instant → LocalDate for comparison
+                    java.time.LocalDate plateDate = p.getTimestamp()
+                            .toDate()
+                            .toInstant()
+                            .atZone(java.time.ZoneOffset.UTC)
+                            .toLocalDate();
+                    return plateDate.equals(today);
+                })
+                .count();
+
+        LicensePlate latest = all.stream()
+                .filter(p -> p.getTimestamp() != null)
+                .max(Comparator.comparing(LicensePlate::getTimestamp))
+                .orElse(all.get(0));
+
+        return toDashboardDTO(latest, totalLicenseToday);
+
+    } catch (Exception e) {
+        throw new RuntimeException("Failed to fetch latest license plate", e);
+    }
+}
+
+private LicensePlateDashbordDTO toDashboardDTO(LicensePlate entity, long totalLicenseToday) {
+    LicensePlateDashbordDTO dto = new LicensePlateDashbordDTO();
+
+    // Convert Firestore Timestamp → ISO-8601 String
+    dto.setTimestamp(entity.getTimestamp() != null
+            ? entity.getTimestamp().toDate().toInstant().toString()
+            : null);
+    dto.setImageUrl(entity.getImageUrl());
+    dto.setTotalLicenseToday(totalLicenseToday);
+
+    if (entity.getLicensePlate() != null) {
+        LicensePlateDashbordDTO.LicensePlateBody plateBody = new LicensePlateDashbordDTO.LicensePlateBody(
+                entity.getLicensePlate().getFullPlate(),
+                entity.getLicensePlate().getText(),
+                entity.getLicensePlate().getNumber(),
+                entity.getLicensePlate().getProvince()
+        );
+        dto.setLicensePlate(plateBody);
+    }
+
+    // Entity uses getCamera() not getCameraId()
+    String camId = entity.getCamera();
+    if (camId != null) {
+        Camera cam = null;
+        try {
+            cam = cameraRepository.getCameraById(camId).orElse(null);
+        } catch (Exception ignored) {}
+
+        LicensePlateDashbordDTO.CameraBody cameraBody = new LicensePlateDashbordDTO.CameraBody(
+                camId,
+                cam != null ? cam.getName() : null
+        );
+        dto.setCamera(cameraBody);
+    }
+
+    return dto;
+}
 }
