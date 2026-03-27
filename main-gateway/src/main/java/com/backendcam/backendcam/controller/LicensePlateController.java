@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.backendcam.backendcam.model.dto.PageResponse;
 import com.backendcam.backendcam.model.dto.licenseplate.LicensePlateDTO;
 import com.backendcam.backendcam.service.licenseplate.LicensePlateService;
 
@@ -35,19 +36,20 @@ public class LicensePlateController {
      * If nothing is provided → returns all records.
      */
     @GetMapping("/search")
-    public ResponseEntity<List<LicensePlateDTO>> search(
+    public ResponseEntity<PageResponse<List<LicensePlateDTO>>> search(
             @RequestParam(required = false) String fullPlate,
             @RequestParam(required = false) String cameraId,
             @RequestParam(required = false) String text,
             @RequestParam(required = false) String number,
             @RequestParam(required = false) String province,
             @RequestParam(required = false) String start,
-            @RequestParam(required = false) String end) {
+            @RequestParam(required = false) String end,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int limit) {
 
-        List<LicensePlateDTO> results = licensePlateService.search(
-                fullPlate, cameraId, text, number, province, start, end);
+        PageResponse<List<LicensePlateDTO>> results = licensePlateService.search(
+                fullPlate, cameraId, text, number, province, start, end, page, limit);
 
-        if (results.isEmpty()) return ResponseEntity.notFound().build();
         return ResponseEntity.ok(results);
     }
 }
