@@ -27,15 +27,16 @@ class _DashboardWidgetState extends State<DashboardWidget> {
   late Timer _liveTimer;
   final LicensePlateRepository _licensePlateRepository =
       LicensePlateRepository();
+  final AccidentRepository _accidentRepository = AccidentRepository();
 
   LicensePlateData _licensePlateData = const LicensePlateData(totalDetected: 0);
-  final _accidentEvent = DetectionEvent(
-    cameraId: 'Camera-A03',
-    lastDetection: DateTime(2024, 1, 1, 9, 15, 42),
-    todayCount: 3,
-    snapshotUrl:
-        'https://images.unsplash.com/photo-1506521781263-d8422e82f27a?w=400&h=200&fit=crop',
+  DetectionEvent _accidentEvent = DetectionEvent(
+    cameraId: '-',
+    lastDetection: DateTime.now(),
+    todayCount: null,
   );
+  String? _topAccidentCameraName;
+  int? _topAccidentCameraMonthCount;
   final _fightingEvent = DetectionEvent(
     cameraId: 'Camera-B07',
     lastDetection: DateTime(2024, 1, 1, 14, 28, 33),
@@ -53,14 +54,21 @@ class _DashboardWidgetState extends State<DashboardWidget> {
   @override
   void initState() {
     super.initState();
-    _loadLatestLicensePlate();
+    _refreshDashboardData();
     _liveTimer = Timer.periodic(const Duration(seconds: 3), (_) {
-      _loadLatestLicensePlate();
+      _refreshDashboardData();
       setState(() => _isLive = false);
       Future.delayed(const Duration(milliseconds: 500), () {
         if (mounted) setState(() => _isLive = true);
       });
     });
+  }
+
+  Future<void> _refreshDashboardData() async {
+    await Future.wait([
+      _loadLatestLicensePlate(),
+      _loadAccidentDashboard(),
+    ]);
   }
 
   Future<void> _loadLatestLicensePlate() async {
@@ -74,8 +82,38 @@ class _DashboardWidgetState extends State<DashboardWidget> {
           latestPlateNumber: latest.licensePlate?.fullPlate,
           cameraId: latest.cameraName ?? latest.cameraId,
           lastDetection: DateTime.tryParse(latest.timestamp ?? ''),
+          todayCount: latest.totalLicenseToday ?? _licensePlateData.todayCount,
           snapshotUrl: latest.imageUrl,
         );
+      });
+    } catch (_) {
+      // Keep existing dashboard values if fetch fails.
+    }
+  }
+
+  Future<void> _loadAccidentDashboard() async {
+    try {
+      final accidentDashboard =
+          await _accidentRepository.getAccidentDashboard();
+      if (!mounted || accidentDashboard == null) return;
+
+      final latest = accidentDashboard.latestAccident;
+      final topCamera = accidentDashboard.topCameras.isNotEmpty
+          ? accidentDashboard.topCameras.first
+          : null;
+
+      setState(() {
+        if (latest != null) {
+          _accidentEvent = DetectionEvent(
+            cameraId: latest.cameraName ?? latest.cameraId ?? '-',
+            lastDetection: DateTime.tryParse(latest.timestamp ?? '') ??
+                _accidentEvent.lastDetection,
+            todayCount: null,
+            snapshotUrl: latest.imageUrl,
+          );
+        }
+        _topAccidentCameraName = topCamera?.cameraName ?? topCamera?.cameraId;
+        _topAccidentCameraMonthCount = topCamera?.accidentCount;
       });
     } catch (_) {
       // Keep existing dashboard values if fetch fails.
@@ -148,7 +186,11 @@ class _DashboardWidgetState extends State<DashboardWidget> {
                 final cards = [
                   LicensePlateCard(
                       data: _licensePlateData, onSearch: _showSearchDialog),
-                  AccidentDetectionCard(event: _accidentEvent),
+                  AccidentDetectionCard(
+                    event: _accidentEvent,
+                    topCameraName: _topAccidentCameraName,
+                    topCameraMonthCount: _topAccidentCameraMonthCount,
+                  ),
                   FightingDetectionCard(event: _fightingEvent),
                 ];
                 return isWide
@@ -168,7 +210,7 @@ class _DashboardWidgetState extends State<DashboardWidget> {
                       );
               }),
               const SizedBox(height: 20),
-             // const IncidentTrendChartCard(),
+              // const IncidentTrendChartCard(),
             ],
           ),
         ),

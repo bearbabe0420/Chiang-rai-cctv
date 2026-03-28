@@ -16,9 +16,11 @@ class ApiConfig {
 
   // License Plate Endpoints
   static const String licensePlateSearchEndpoint = '/license-plates/search';
+  static const String licensePlateStatsEndpoint = '/license-plates/stats';
 
   // Accident Endpoints
   static const String accidentsEndpoint = '/accidents';
+  static const String accidentsDashboardEndpoint = '/accidents/dashboard';
 
   // HLS Streaming
   static const String hlsBaseUrl = 'https://se-lab.aboutblank.in.th';

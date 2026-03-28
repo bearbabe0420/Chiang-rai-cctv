@@ -8,7 +8,15 @@ import 'snapshot_section.dart';
 
 class AccidentDetectionCard extends StatelessWidget {
   final DetectionEvent event;
-  const AccidentDetectionCard({super.key, required this.event});
+  final String? topCameraName;
+  final int? topCameraMonthCount;
+
+  const AccidentDetectionCard({
+    super.key,
+    required this.event,
+    this.topCameraName,
+    this.topCameraMonthCount,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +52,7 @@ class AccidentDetectionCard extends StatelessWidget {
               'dashboard_ai.fields.today_count',
               fallback: 'จำนวนวันนี้',
             ),
-            value: event.todayCount.toString(),
+            value: event.todayCount?.toString() ?? '-',
             icon: Icons.bar_chart_outlined,
           ),
           const InfoRowDivider(),
@@ -53,7 +61,7 @@ class AccidentDetectionCard extends StatelessWidget {
               'dashboard_ai.fields.top_camera_month',
               fallback: 'กล้องเกิดอุบัติเหตุมากสุดเดือนนี้',
             ),
-            value: '-',
+            value: topCameraName ?? '-',
             icon: Icons.emoji_events_outlined,
           ),
           const InfoRowDivider(),
@@ -62,11 +70,13 @@ class AccidentDetectionCard extends StatelessWidget {
               'dashboard_ai.fields.top_camera_month_count',
               fallback: 'จำนวนครั้งในเดือน',
             ),
-            value: '-',
+            value: topCameraMonthCount?.toString() ?? '-',
             icon: Icons.insights_outlined,
           ),
           const SizedBox(height: 20),
-          SnapshotSection(imageUrl: event.snapshotUrl, placeholderColor: const Color(0xFF3A3A3C)),
+          SnapshotSection(
+              imageUrl: event.snapshotUrl,
+              placeholderColor: const Color(0xFF3A3A3C)),
         ],
       ),
     );

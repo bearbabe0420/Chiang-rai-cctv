@@ -6,8 +6,7 @@ export '/data/services/api_manager.dart' show ApiCallResponse;
 
 /// License Plate Service - จัดการ API สำหรับค้นหาทะเบียนรถ
 class LicensePlateService {
-  static final LicensePlateService _instance =
-      LicensePlateService._internal();
+  static final LicensePlateService _instance = LicensePlateService._internal();
   factory LicensePlateService() => _instance;
   LicensePlateService._internal();
 
@@ -37,11 +36,11 @@ class LicensePlateService {
       alwaysAllowBody: false,
     );
   }
-  
+
   Future<ApiCallResponse> getLatestLicensePlate() async {
     return ApiManager.instance.makeApiCall(
       callName: 'Get Latest License Plate',
-      apiUrl: '${ApiConfig.baseUrl}${ApiConfig.licensePlateSearchEndpoint}',
+      apiUrl: '${ApiConfig.baseUrl}${ApiConfig.licensePlateStatsEndpoint}',
       callType: ApiCallType.GET,
       headers: {
         'Content-Type': 'application/json',
@@ -63,8 +62,8 @@ class LicensePlateService {
   String? parseCameraId(dynamic response) =>
       castToType<String>(getJsonField(response, r'$[:].cameraId'));
 
-  String? parseFullPlate(dynamic response) =>
-      castToType<String>(getJsonField(response, r'$[:].licensePlate.fullPlate'));
+  String? parseFullPlate(dynamic response) => castToType<String>(
+      getJsonField(response, r'$[:].licensePlate.fullPlate'));
 
   String? parseImageUrl(dynamic response) =>
       castToType<String>(getJsonField(response, r'$[:].imageUrl'));

@@ -4,6 +4,7 @@ class LicensePlateModel {
   final String? cameraName;
   final String? cameraId;
   final String? imageUrl;
+  final int? totalLicenseToday;
   final LicensePlateDetail? licensePlate;
 
   LicensePlateModel({
@@ -11,15 +12,21 @@ class LicensePlateModel {
     this.cameraName,
     this.cameraId,
     this.imageUrl,
+    this.totalLicenseToday,
     this.licensePlate,
   });
 
   factory LicensePlateModel.fromJson(Map<String, dynamic> json) {
     return LicensePlateModel(
       timestamp: json['timestamp'] as String?,
-      cameraName: (json['camera'] as Map<String, dynamic>?)?['cameraName'] as String?,
-      cameraId: (json['camera'] as Map<String, dynamic>?)?['cameraId'] as String?,
+      cameraName:
+          (json['camera'] as Map<String, dynamic>?)?['cameraName'] as String?,
+      cameraId:
+          (json['camera'] as Map<String, dynamic>?)?['cameraId'] as String?,
       imageUrl: json['imageUrl'] as String?,
+      totalLicenseToday: json['total_license_today'] is int
+          ? json['total_license_today'] as int
+          : int.tryParse('${json['total_license_today'] ?? ''}'),
       licensePlate: json['licensePlate'] != null
           ? LicensePlateDetail.fromJson(
               json['licensePlate'] as Map<String, dynamic>)
@@ -33,12 +40,13 @@ class LicensePlateModel {
       //if (cameraName != null) 'cameraName': cameraName,
       //if (cameraId != null) 'cameraId': cameraId,
       if (imageUrl != null) 'imageUrl': imageUrl,
+      if (totalLicenseToday != null) 'total_license_today': totalLicenseToday,
       if (licensePlate != null) 'licensePlate': licensePlate?.toJson(),
       if (cameraName != null || cameraId != null)
-      'camera': {
-        'cameraName': cameraName,
-        'cameraId': cameraId,
-      },
+        'camera': {
+          'cameraName': cameraName,
+          'cameraId': cameraId,
+        },
     };
   }
 

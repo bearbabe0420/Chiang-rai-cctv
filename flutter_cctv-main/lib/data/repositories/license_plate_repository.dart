@@ -33,17 +33,28 @@ class LicensePlateRepository {
   Future<LicensePlateModel?> getLatestLicensePlate() async {
     try {
       final response = await _service.getLatestLicensePlate();
-      if (response.succeeded && response.jsonBody is List) {
-        final data = response.jsonBody as List;
-        if (data.isEmpty) return null;
+      if (response.succeeded && response.jsonBody != null) {
+        final payload = response.jsonBody;
 
-        final latestJson = data.first;
-        if (latestJson is Map<String, dynamic>) {
-          return LicensePlateModel.fromJson(latestJson);
+        if (payload is Map<String, dynamic>) {
+          return LicensePlateModel.fromJson(payload);
         }
 
-        if (latestJson is Map) {
-          return LicensePlateModel.fromJson(Map<String, dynamic>.from(latestJson));
+        if (payload is Map) {
+          return LicensePlateModel.fromJson(Map<String, dynamic>.from(payload));
+        }
+
+        if (payload is List) {
+          if (payload.isEmpty) return null;
+          final latestJson = payload.first;
+          if (latestJson is Map<String, dynamic>) {
+            return LicensePlateModel.fromJson(latestJson);
+          }
+          if (latestJson is Map) {
+            return LicensePlateModel.fromJson(
+              Map<String, dynamic>.from(latestJson),
+            );
+          }
         }
       }
       return null;

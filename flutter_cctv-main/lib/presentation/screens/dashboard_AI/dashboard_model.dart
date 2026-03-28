@@ -1,13 +1,13 @@
 class DetectionEvent {
   final String cameraId;
   final DateTime lastDetection;
-  final int todayCount;
+  final int? todayCount;
   final String? snapshotUrl;
 
   const DetectionEvent({
     required this.cameraId,
     required this.lastDetection,
-    required this.todayCount,
+    this.todayCount,
     this.snapshotUrl,
   });
 
@@ -40,9 +40,9 @@ class LicensePlateData {
 
   String get formattedTotal {
     return totalDetected.toString().replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-      (m) => '${m[1]},',
-    );
+          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          (m) => '${m[1]},',
+        );
   }
 
   String? get formattedTime {
