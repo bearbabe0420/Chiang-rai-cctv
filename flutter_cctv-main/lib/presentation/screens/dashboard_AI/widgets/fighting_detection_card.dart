@@ -44,11 +44,13 @@ class FightingDetectionCard extends StatelessWidget {
               'dashboard_ai.fields.today_count',
               fallback: 'จำนวนวันนี้',
             ),
-            value: event.todayCount.toString(),
+            value: event.todayCount?.toString() ?? '-',
             icon: Icons.bar_chart_outlined,
           ),
           const SizedBox(height: 20),
-          SnapshotSection(imageUrl: event.snapshotUrl, placeholderColor: const Color(0xFF8E8E93)),
+          SnapshotSection(
+              imageUrl: event.snapshotUrl,
+              placeholderColor: const Color(0xFF8E8E93)),
         ],
       ),
     );
